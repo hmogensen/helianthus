@@ -4,7 +4,7 @@ import logging
 import os
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler()
@@ -12,6 +12,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
 
 class NetworkCamera:
 
@@ -22,6 +23,10 @@ class NetworkCamera:
         self.cap = None
         self.flush_frames = flush_frames
         self.image_interval_s = image_interval_s
+
+        self.nbr_of_failed_captures = 0
+        self.delay_start_s = 0
+
         os.makedirs(self.location, exist_ok=True)
 
     def start_capture(self, persistent=True):
@@ -36,8 +41,11 @@ class NetworkCamera:
             try:
                 success = self.capture_image()
                 if success:
+                    self.nbr_of_failed_captures = 0
+                    self.delay_start_s = 0
                     time.sleep(self.image_interval_s)
                 else:
+                    self.nbr_of_failed_captures += 1
                     self.restart()
             except Exception as exc:
                 logger.exception("Exception during persistent capture")
@@ -58,8 +66,7 @@ class NetworkCamera:
             for i in range(self.flush_frames):
                 success = self.cap.grab()
                 if not success:
-                    logger.error(f"Flushing error {i} / {self.flush_frames}")
-                    return False
+                    logger.debug(f"Flushing error {i} / self.flush_frames")
             time.sleep(1)
 
         success, frame = self.cap.read()
@@ -92,6 +99,15 @@ class NetworkCamera:
         self.is_connected = False
 
     def restart(self):
+        if self.nbr_of_failed_captures == 3:
+            self.delay_start_s = 30
+        elif self.nbr_of_failed_captures > 3:
+            self.delay_start_s = min(2*self.delay_start_s, 600)
+
+        if self.delay_start_s:
+            logger.info(f"{self.nbr_of_failed_captures} consecutive failed captures. Waiting {self.delay_start_s} seconds")
+            time.sleep(self.delay_start_s)
+        
         self.release_capture()
         time.sleep(10)
         self.open_capture()

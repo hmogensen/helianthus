@@ -2,7 +2,7 @@ from network_camera import NetworkCamera
 import configparser
 import argparse
 
-default_flush_frames = 100
+default_flush_frames = 0
 default_image_interval_s = 600
 
 def record_timelapse(cam_id:str, location:str, flush_frames:int, image_interval_s:float):
