@@ -117,4 +117,3 @@ class NetworkCamera:
         self.open_capture()
         self.capture_image()
         self.release_capture()
-        
