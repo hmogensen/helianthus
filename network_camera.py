@@ -2,6 +2,7 @@ import cv2
 import time
 import logging
 import os
+import numpy as np
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,6 +27,7 @@ class NetworkCamera:
 
         self.nbr_of_failed_captures = 0
         self.delay_start_s = 0
+        self.last_frame = None
 
         os.makedirs(self.location, exist_ok=True)
 
@@ -71,16 +73,22 @@ class NetworkCamera:
 
         success, frame = self.cap.read()
         if success:
+            if self.last_frame is not None and np.array_equal(frame, self.last_frame):
+                logger.error("Captured frame is identical to previous frame")
+                raise ValueError("Buffer error: Identical consecutive frames detected")
+
             timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
             filename = os.path.join(self.location, f"{self.location}-{timestamp}.png")
             cv2.imwrite(filename, frame)
+            self.last_frame = frame
             logger.info(f"Saved image: {filename}")
         else:
             logger.error("Image capturing error")
         return success
-    
+
     def open_capture(self):
         self.cap = cv2.VideoCapture(self.url)
+        self.last_frame = None
         if not self.cap.isOpened():
             logger.error("Error opening rtsp stream")
             self.is_connected = False
