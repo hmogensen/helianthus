@@ -5,7 +5,7 @@ import argparse
 default_flush_frames = 0
 default_image_interval_s = 600
 
-def record_timelapse(cam_id:str, location:str, flush_frames:int, image_interval_s:float):
+def record_timelapse(cam_id:str, location:str, flush_frames:int, image_interval_s:float, persistent:bool):
     
     config = configparser.ConfigParser()
     config.read('credentials.txt')
@@ -24,7 +24,7 @@ def record_timelapse(cam_id:str, location:str, flush_frames:int, image_interval_
         rtsp_url = f"rtsp://{username}:{password}@{cam_ip}:554/{stream_path}"
     
     cam = NetworkCamera(url=rtsp_url, location=location, flush_frames=flush_frames, image_interval_s=image_interval_s)
-    cam.start_capture(persistent=True)
+    cam.start_capture(persistent=persistent)
     
     return cam
 
@@ -37,6 +37,8 @@ if __name__ == "__main__":
                         help=f'Number of frames to flush. Default: {default_flush_frames}')
     parser.add_argument('--interval', '-i', type=int, default=default_image_interval_s, 
                         help=f'Interval between image captures in seconds. Default: {default_image_interval_s}')
+    parser.add_argument('--restart-every-cycle', '-r', action='store_true',
+                    help='Restart the camera connection on every capture cycle')
     
     args = parser.parse_args()
     
@@ -44,5 +46,6 @@ if __name__ == "__main__":
         cam_id=args.cam,
         location=args.loc,
         flush_frames=args.flush,
-        image_interval_s=args.interval
+        image_interval_s=args.interval,
+        persistent=not args.restart_every_cycle
     )
