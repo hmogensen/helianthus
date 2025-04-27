@@ -46,6 +46,6 @@ if __name__ == "__main__":
         cam_id=args.cam,
         location=args.loc,
         flush_frames=args.flush,
-        image_interval_s=args.interval
+        image_interval_s=args.interval,
         persistent=not args.restart_every_cycle
     )
