@@ -1,0 +1,16 @@
+[Unit]
+Description=Timelapse Recording Service
+After=network.target
+
+[Service]
+Type=simple
+User=username
+WorkingDirectory=/home/username/repos/timelapse
+ExecStart=/usr/bin/python3 /home/username/repos/timelapse/timelapse.py reolink-lowres garden-lowres --restart-every-cycle
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

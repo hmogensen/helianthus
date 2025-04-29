@@ -1,0 +1,16 @@
+i[Unit]
+Description=Timelapse TP lowres network camera
+After=network.target
+
+[Service]
+Type=simple
+User=username
+WorkingDirectory=/home/username/repos/timelapse
+ExecStart=/usr/bin/python3 /home/username/repos/timelapse/timelapse.py tapo-lowres scaffolding --flush 100
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
