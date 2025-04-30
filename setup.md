@@ -233,6 +233,7 @@ sudo nmcli connection modify "Your-WiFi-Connection-Name" \
 ### 3. Apply the Changes
 
 Restart the network connection to apply the changes:
+(Not if connected via SSH, as you will lose the connection!)
 
 ```bash
 sudo nmcli connection down "Your-WiFi-Connection-Name"
