@@ -4,7 +4,7 @@ import glob
 import subprocess
 
 # Define locations
-locations = ['garden-lowres', 'sunflowers-lowres']
+locations = ['scaffolding', 'garden-lowres', 'sunflowers-lowres']
 
 # Collect all data with rsync for both locations
 for location in locations:
@@ -15,6 +15,10 @@ for location in locations:
     # Delete files on remote after successful download
     ssh_command = f"ssh username@192.168.0.46 'rm -f /home/username/repos/timelapse/{location}/*.png'"
     subprocess.run(ssh_command, shell=True)
+
+def get_img_shape(img):
+    frame = cv2.imread(img)
+    return frame.shape[:2]
 
 # Process each location automatically
 for location in locations:
@@ -29,8 +33,10 @@ for location in locations:
     images = sorted(glob.glob(os.path.join(image_folder, f'{location}*.png')))
     
     # Get first image dimensions
-    frame = cv2.imread(images[0])
-    height, width, layers = frame.shape
+    height1, width1 = get_img_shape(images[0])
+    height2, width2 = get_img_shape(images[-1])
+    height = min(height1, height2)
+    width = min(width1, width2)
     
     # Create video writer
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
