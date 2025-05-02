@@ -4,10 +4,11 @@ import glob
 import subprocess
 
 # Define locations
-locations = ['scaffolding', 'garden-lowres', 'sunflowers-lowres']
+locations = ['scaffolding', 'garden-lowres'] #, 'sunflowers-lowres']
 
 # Collect all data with rsync for both locations
 for location in locations:
+    print(location)
     files_before = set(glob.glob(f"~/data/{location}/{location}*.png"))
 
     # Copy files with rsync
@@ -16,9 +17,9 @@ for location in locations:
 
     files_after = set(glob.glob(f"~/data/{location}/{location}*.png"))
 
-    new_files = files_after - files_before
+    new_files = len(files_after) - len(files_before)
 
-
+    print(new_files)
     if new_files:
         print(f"New frames received for {location}: {len(new_files)} files")
         # Delete files on remote after successful download
@@ -32,12 +33,16 @@ for location in locations:
         if os.path.exists(video_name):
             print(f"Renaming current {video_name} to {backup_video_name}")
             os.replace(video_name, backup_video_name)
-    else:
-        locations.remove(location)
 
 def get_img_shape(img):
     frame = cv2.imread(img)
     return frame.shape[:2]
+
+def read_and_resize(image, target_width, target_height):
+    frame = cv2.imread(image)
+    if frame.shape[0] != target_height or frame.shape[1] != target_width:
+        frame = cv2.resize(frame, (target_width, target_height))
+    return frame
 
 # Process each location automatically
 for location in locations:
@@ -62,13 +67,12 @@ for location in locations:
     video = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
     
     # Add each image to video
-    for i, image in enumerate(images):
-        print(f"{i} / {len(images)}")
-        video.write(cv2.imread(image))
+    for i, image_fpath in enumerate(images):
+        print(f"{i} / {len(images)}: {image_fpath}")
+        frame = read_and_resize(image_fpath, width, height)
+        video.write(frame)
     
     # Release resources
     video.release()
     
     print(f"Completed video for {location}")
-
-print("All videos created successfully!")
