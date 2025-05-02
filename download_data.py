@@ -8,13 +8,32 @@ locations = ['scaffolding', 'garden-lowres', 'sunflowers-lowres']
 
 # Collect all data with rsync for both locations
 for location in locations:
+    files_before = set(glob.glob(f"~/data/{location}/{location}*.png"))
+
     # Copy files with rsync
     rsync_command = f"rsync -av --ignore-existing username@192.168.0.46:/home/username/repos/timelapse/{location}/* ~/data/{location}"
     subprocess.run(rsync_command, shell=True)
 
-    # Delete files on remote after successful download
-    ssh_command = f"ssh username@192.168.0.46 'rm -f /home/username/repos/timelapse/{location}/*.png'"
-    subprocess.run(ssh_command, shell=True)
+    files_after = set(glob.glob(f"~/data/{location}/{location}*.png"))
+
+    new_files = files_after - files_before
+
+
+    if new_files:
+        print(f"New frames received for {location}: {len(new_files)} files")
+        # Delete files on remote after successful download
+        ssh_command = f"ssh username@192.168.0.46 'rm -f /home/username/repos/timelapse/{location}/*.png'"
+        subprocess.run(ssh_command, shell=True)
+
+        # If current video exists, rename it to backup (overwriting existing backup)
+        video_name = f'{location}.mp4'
+        backup_video_name = f'{location}_backup.mp4'
+        
+        if os.path.exists(video_name):
+            print(f"Renaming current {video_name} to {backup_video_name}")
+            os.replace(video_name, backup_video_name)
+    else:
+        locations.remove(location)
 
 def get_img_shape(img):
     frame = cv2.imread(img)
