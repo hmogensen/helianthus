@@ -7,7 +7,7 @@ import subprocess
 locations = ['scaffolding', 'garden-lowres'] #, 'sunflowers-lowres']
 generate_video = []
 
-top_local_dir = f"~/data"
+top_local_dir = f"/home/username/data"
 
 top_remote_dir = f"/home/username/repos/timelapse"
 
@@ -21,10 +21,10 @@ def get_file_paths(location):
     local_fpath = f"{local_dir}/{location}*.png"
 
     remote_dir = f"{top_remote_dir}/{location}"
-    remote_fpath = f"{remote_dir}/{location}*.png"
+    remote_fpath = f"{remote_dir}/{location}*"
 
     video_path = f"{location}.mp4"
-    video_backup_path = f"{location}.backup.mp4"
+    video_backup_path = f"{location}.prev.mp4"
 
     return local_dir, local_fpath, remote_fpath, video_path, video_backup_path
 
@@ -36,9 +36,9 @@ for loc in locations:
 
     old_file_list = set(glob.glob(l_fpath))
 
-    print(f"f_fpath {r_fpath}, l_dir {l_dir}")
     rsync_cmd = f"rsync -av --ignore-existing username@192.168.0.46:{r_fpath} {l_dir}"
     subprocess.run(rsync_cmd, shell=True)
+    os.sync()
 
     updated_file_list = set(glob.glob(l_fpath))
 
@@ -46,7 +46,7 @@ for loc in locations:
 
     print(f"Added files: {len(added_files)}")
 
-    if len(added_files) > 0:
+    if len(added_files) > 0 or not os.path.exists(video_path):
 
         generate_video.append(loc)
         
@@ -79,9 +79,10 @@ for loc in generate_video:
     width = min(width1, width2)
     
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
+    video = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
     
     for i, image_fpath in enumerate(images):
+        print(f"{i} / {len(images)}")
         frame = read_and_resize(image_fpath, width, height)
         video.write(frame)
     
