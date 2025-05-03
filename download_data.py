@@ -5,34 +5,57 @@ import subprocess
 
 # Define locations
 locations = ['scaffolding', 'garden-lowres'] #, 'sunflowers-lowres']
+generate_video = []
 
-# Collect all data with rsync for both locations
-for location in locations:
-    print(location)
-    files_before = set(glob.glob(f"~/data/{location}/{location}*.png"))
+top_local_dir = f"~/data"
 
-    # Copy files with rsync
-    rsync_command = f"rsync -av --ignore-existing username@192.168.0.46:/home/username/repos/timelapse/{location}/* ~/data/{location}"
-    subprocess.run(rsync_command, shell=True)
+top_remote_dir = f"/home/username/repos/timelapse"
 
-    files_after = set(glob.glob(f"~/data/{location}/{location}*.png"))
+remote_login = "username@192.168.0.46"
 
-    new_files = len(files_after) - len(files_before)
+fps = 24
 
-    print(new_files)
-    if new_files:
-        print(f"New frames received for {location}: {len(new_files)} files")
-        # Delete files on remote after successful download
-        ssh_command = f"ssh username@192.168.0.46 'rm -f /home/username/repos/timelapse/{location}/*.png'"
-        subprocess.run(ssh_command, shell=True)
 
-        # If current video exists, rename it to backup (overwriting existing backup)
-        video_name = f'{location}.mp4'
-        backup_video_name = f'{location}_backup.mp4'
+def get_file_paths(location):
+    local_dir = f"{top_local_dir}/{location}"
+    local_fpath = f"{local_dir}/{location}*.png"
+
+    remote_dir = f"{top_remote_dir}/{location}"
+    remote_fpath = f"{remote_dir}/{location}*.png"
+
+    video_path = f"{location}.mp4"
+    video_backup_path = f"{location}.backup.mp4"
+
+    return local_dir, local_fpath, remote_fpath, video_path, video_backup_path
+
+
+for loc in locations:
+    print(f"Trawl for images: {loc}")
+
+    l_dir, l_fpath, r_fpath, video_path, video_backup_path = get_file_paths(loc)
+
+    old_file_list = set(glob.glob(l_fpath))
+
+    print(f"f_fpath {r_fpath}, l_dir {l_dir}")
+    rsync_cmd = f"rsync -av --ignore-existing username@192.168.0.46:{r_fpath} {l_dir}"
+    subprocess.run(rsync_cmd, shell=True)
+
+    updated_file_list = set(glob.glob(l_fpath))
+
+    added_files = updated_file_list - old_file_list
+
+    print(f"Added files: {len(added_files)}")
+
+    if len(added_files) > 0:
+
+        generate_video.append(loc)
         
-        if os.path.exists(video_name):
-            print(f"Renaming current {video_name} to {backup_video_name}")
-            os.replace(video_name, backup_video_name)
+        rm_cmd = f"ssh {remote_login} 'rm -f {r_fpath}'"
+        subprocess.run(rm_cmd, shell=True)
+
+        if os.path.exists(video_path):
+            os.replace(video_path, video_backup_path)
+
 
 def get_img_shape(img):
     frame = cv2.imread(img)
@@ -44,35 +67,22 @@ def read_and_resize(image, target_width, target_height):
         frame = cv2.resize(frame, (target_width, target_height))
     return frame
 
-# Process each location automatically
-for location in locations:
-    # Parameters
-    image_folder = f'/home/username/data/{location}/'
-    video_name = f'{location}.mp4'
-    fps = 24
-
-    print(f"Processing {location}...")
+for loc in generate_video:
+    print(f"Generate video: {loc}")
+    l_dir, l_fpath, r_fpath, video_path, video_backup_path = get_file_paths(loc)
     
-    # Get all PNG files, sorted
-    images = sorted(glob.glob(os.path.join(image_folder, f'{location}*.png')))
+    images = sorted(glob.glob(l_fpath))
     
-    # Get first image dimensions
     height1, width1 = get_img_shape(images[0])
     height2, width2 = get_img_shape(images[-1])
     height = min(height1, height2)
     width = min(width1, width2)
     
-    # Create video writer
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
     
-    # Add each image to video
     for i, image_fpath in enumerate(images):
-        print(f"{i} / {len(images)}: {image_fpath}")
         frame = read_and_resize(image_fpath, width, height)
         video.write(frame)
     
-    # Release resources
     video.release()
-    
-    print(f"Completed video for {location}")
