@@ -4,7 +4,7 @@ import glob
 import subprocess
 
 # Define locations
-locations = ['scaffolding', 'garden-lowres'] #, 'sunflowers-lowres']
+locations = ['scaffolding', 'garden-lowres', 'sunflowers-lowres']
 generate_video = []
 
 top_local_dir = f"/home/username/data"
@@ -13,8 +13,8 @@ top_remote_dir = f"/home/username/repos/timelapse"
 
 remote_login = "username@192.168.0.46"
 
-fps = 24
-
+fps = 12
+video_ext = "mp4"
 
 def get_file_paths(location):
     local_dir = f"{top_local_dir}/{location}"
@@ -23,8 +23,10 @@ def get_file_paths(location):
     remote_dir = f"{top_remote_dir}/{location}"
     remote_fpath = f"{remote_dir}/{location}*"
 
-    video_path = f"{location}.mp4"
-    video_backup_path = f"{location}.prev.mp4"
+    video_base = f"{location}-{fps}fps"
+
+    video_path = f"{video_base}.{video_ext}"
+    video_backup_path = f"{video_base}.prev.{video_ext}"
 
     return local_dir, local_fpath, remote_fpath, video_path, video_backup_path
 
