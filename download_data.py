@@ -2,6 +2,7 @@ import cv2
 import os
 import glob
 import subprocess
+import configparser
 
 # Define locations
 locations = ['scaffolding', 'garden-lowres', 'sunflowers-lowres']
@@ -13,8 +14,9 @@ top_remote_dir = f"/home/username/repos/timelapse"
 
 remote_login = "username@192.168.0.46"
 
-fps = 12
 video_ext = "mp4"
+
+video_settings_path = "video-settings.txt"
 
 def get_file_paths(location):
     local_dir = f"{top_local_dir}/{location}"
@@ -23,18 +25,24 @@ def get_file_paths(location):
     remote_dir = f"{top_remote_dir}/{location}"
     remote_fpath = f"{remote_dir}/{location}*"
 
+    if not os.path.exists(video_settings_path):
+        raise FileNotFoundError(f"Settings file {video_settings_path} does not exist")
+    config = configparser.ConfigParser()
+    config.read(video_settings_path)
+    fps = int(config[location]["fps"])
+
     video_base = f"{location}-{fps}fps"
 
     video_path = f"{video_base}.{video_ext}"
     video_backup_path = f"{video_base}.prev.{video_ext}"
 
-    return local_dir, local_fpath, remote_fpath, video_path, video_backup_path
+    return local_dir, local_fpath, remote_fpath, video_path, video_backup_path, fps
 
 
 for loc in locations:
     print(f"Trawl for images: {loc}")
 
-    l_dir, l_fpath, r_fpath, video_path, video_backup_path = get_file_paths(loc)
+    l_dir, l_fpath, r_fpath, video_path, video_backup_path, _ = get_file_paths(loc)
 
     old_file_list = set(glob.glob(l_fpath))
 
@@ -71,7 +79,9 @@ def read_and_resize(image, target_width, target_height):
 
 for loc in generate_video:
     print(f"Generate video: {loc}")
-    l_dir, l_fpath, r_fpath, video_path, video_backup_path = get_file_paths(loc)
+    l_dir, l_fpath, r_fpath, video_path, video_backup_path, fps = get_file_paths(loc)
+
+    
     
     images = sorted(glob.glob(l_fpath))
     

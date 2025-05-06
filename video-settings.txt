@@ -1,0 +1,8 @@
+[sunflowers-lowres]
+fps=24
+
+[garden-lowres]
+fps=12
+
+[scaffolding]
+fps=12
