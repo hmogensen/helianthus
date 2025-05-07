@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import cv2
 import os
 import glob
@@ -19,6 +20,12 @@ remote_login = "username@192.168.0.46"
 video_ext = "mp4"
 
 video_settings_path = "video-settings.txt"
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Process timelapse images.')
+    parser.add_argument('--rm-remote', action='store_true', 
+                        help='Delete files on the remote device after syncing')
+    return parser.parse_args()
 
 def get_file_paths(location):
     local_dir = f"{top_local_dir}/{location}"
@@ -40,6 +47,7 @@ def get_file_paths(location):
 
     return local_dir, local_fpath, remote_fpath, video_path, video_backup_path, fps
 
+args = parse_args()
 
 for loc in locations:
     print(f"Trawl for images: {loc}")
@@ -62,8 +70,9 @@ for loc in locations:
 
         generate_video.append(loc)
 
-        rm_cmd = f"ssh {remote_login} 'rm -f {r_fpath}'"
-        subprocess.run(rm_cmd, shell=True)
+        if args.rm_remote:
+            rm_cmd = f"ssh {remote_login} 'rm -f {r_fpath}'"
+            subprocess.run(rm_cmd, shell=True)
 
         if os.path.exists(video_path):
             os.replace(video_path, video_backup_path)
