@@ -9,7 +9,16 @@
 
 ## Setting Up SSH Key Authentication
 
+<<<<<<< HEAD
 1. Generate SSH key pair on your local machine:
+=======
+1. Check available keys on your local machine
+   ```bash
+   ls -la ~/.ssh
+   ```
+
+2. If they do not exist: generate SSH key pair on your local machine:
+>>>>>>> 05b4adc (Clean up setup.md)
    ```bash
    ssh-keygen -t ed25519 -C "your_email@example.com"
    ```
@@ -171,3 +180,142 @@ If you lose network connectivity after applying changes:
    sudo nmcli connection down "Your-WiFi-Connection-Name"
    sudo nmcli connection up "Your-WiFi-Connection-Name"
    ```
+## Running Python Scripts Daily with Systemd
+
+You can use systemd timers to run your Python script daily, even after system reboots. This approach provides better logging, more control, and is the modern way to schedule tasks on Ubuntu.
+
+### 1. Create your Python script
+
+First, create your Python script in a location where it can be easily accessed:
+
+```bash
+mkdir -p ~/scripts
+touch ~/scripts/daily_task.py
+chmod +x ~/scripts/daily_task.py
+```
+
+Your script should have a proper shebang:
+
+```python
+#!/usr/bin/env python3
+
+# Your script code here
+```
+
+### 2. Create a systemd service file
+
+Create a service file that will run your script:
+
+```bash
+sudo nano /etc/systemd/system/timelapse-download.service
+```
+
+Add the following content:
+
+```
+[Unit]
+Description=Daily Python Task
+After=network.target
+
+[Service]
+Type=oneshot
+User=username
+ExecStart=/usr/bin/python3 /home/username/repos/timelapse/timelapse-download.py
+WorkingDirectory=/home/username/repos/timelapse
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### 3. Create a systemd timer file
+
+Create a timer file that will trigger the service:
+
+```bash
+sudo nano /etc/systemd/system/timelapse-download.timer
+```
+
+Add the following content:
+
+```
+[Unit]
+Description=Run timelapse-download service daily
+
+[Timer]
+OnCalendar=*-*-* 00:00:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target
+```
+
+The key settings here:
+- `OnCalendar=*-*-* 00:00:00` runs the script daily at midnight
+- `Persistent=true` ensures the timer will trigger even if the system was off at the scheduled time
+- `RandomizedDelaySec=10min` adds a small random delay to avoid all timers running at exactly the same time
+
+### 4. Enable and start the timer
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable timelapse-download.timer
+sudo systemctl start timelapse-download.timer
+```
+
+### 5. Verify the timer is working
+
+```bash
+sudo systemctl list-timers
+```
+
+This will show all active timers, including when they'll next run.
+
+### 6. Check logs
+
+To check if your script ran successfully, you can use:
+
+```bash
+sudo journalctl -u timelapse-download.service
+```
+
+### 7. Testing
+
+You can manually trigger the service to test it:
+
+```bash
+sudo systemctl start timelapse-download.service
+```
+
+To check the status of your service after running it:
+
+```bash
+sudo systemctl status timelapse-download.service
+```
+
+For more detailed logs:
+
+```bash
+sudo journalctl -u timelapse-download.service
+```
+
+### Additional Tips
+
+- If your script needs specific environment variables or dependencies, you can add them to the service file:
+
+```
+[Service]
+Type=oneshot
+User=your_username
+Environment="PATH=/home/your_username/venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/home/your_username/scripts/daily_task.py
+WorkingDirectory=/home/your_username/scripts
+```
+
+- You can also set up email notifications for failures by adding:
+
+```
+[Service]
+...
+OnFailure=status-email-user@%n.service
+```
