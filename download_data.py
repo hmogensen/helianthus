@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import cv2
 import os
 import glob
@@ -56,10 +58,10 @@ for loc in locations:
 
     print(f"Added files: {len(added_files)}")
 
-    if len(added_files) > 0 or not os.path.exists(video_path):
+    if len(updated_file_list) > 0 and (len(added_files) > 0 or not os.path.exists(video_path)):
 
         generate_video.append(loc)
-        
+
         rm_cmd = f"ssh {remote_login} 'rm -f {r_fpath}'"
         subprocess.run(rm_cmd, shell=True)
 
@@ -81,21 +83,19 @@ for loc in generate_video:
     print(f"Generate video: {loc}")
     l_dir, l_fpath, r_fpath, video_path, video_backup_path, fps = get_file_paths(loc)
 
-    
-    
     images = sorted(glob.glob(l_fpath))
-    
+
     height1, width1 = get_img_shape(images[0])
     height2, width2 = get_img_shape(images[-1])
     height = min(height1, height2)
     width = min(width1, width2)
-    
+
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
-    
+
     for i, image_fpath in enumerate(images):
         print(f"{i} / {len(images)}")
         frame = read_and_resize(image_fpath, width, height)
         video.write(frame)
-    
+
     video.release()
