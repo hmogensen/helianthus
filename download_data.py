@@ -48,7 +48,7 @@ for loc in locations:
 
     old_file_list = set(glob.glob(l_fpath))
 
-    rsync_cmd = f"rsync -av --ignore-existing username@192.168.0.46:{r_fpath} {l_dir}"
+    rsync_cmd = f"rsync -av --ignore-existing {remote_login}:{r_fpath} {l_dir}"
     subprocess.run(rsync_cmd, shell=True)
     os.sync()
 
