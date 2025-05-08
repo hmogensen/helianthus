@@ -9,16 +9,12 @@
 
 ## Setting Up SSH Key Authentication
 
-<<<<<<< HEAD
-1. Generate SSH key pair on your local machine:
-=======
 1. Check available keys on your local machine
    ```bash
    ls -la ~/.ssh
    ```
 
 2. If they do not exist: generate SSH key pair on your local machine:
->>>>>>> 05b4adc (Clean up setup.md)
    ```bash
    ssh-keygen -t ed25519 -C "your_email@example.com"
    ```
@@ -189,9 +185,9 @@ You can use systemd timers to run your Python script daily, even after system re
 First, create your Python script in a location where it can be easily accessed:
 
 ```bash
-mkdir -p ~/scripts
-touch ~/scripts/daily_task.py
-chmod +x ~/scripts/daily_task.py
+mkdir -p ~/repos/timelapse
+touch ~/repos/timelapse/download_data.py
+chmod +x ~/repos/timelapse/download_data.py
 ```
 
 Your script should have a proper shebang:
@@ -308,8 +304,8 @@ sudo journalctl -u timelapse-download.service
 Type=oneshot
 User=your_username
 Environment="PATH=/home/your_username/venv/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=/home/your_username/scripts/daily_task.py
-WorkingDirectory=/home/your_username/scripts
+ExecStart=/home/username/repos/timelapse/download_data.py
+WorkingDirectory=/home/username/repos/timelapse
 ```
 
 - You can also set up email notifications for failures by adding:
