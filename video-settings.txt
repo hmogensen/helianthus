@@ -1,5 +1,7 @@
 [sunflowers-lowres]
 fps=24
+crop=157,237,671,579
+resolution=720,1280
 
 [garden-lowres]
 fps=12

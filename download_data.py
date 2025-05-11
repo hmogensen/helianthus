@@ -8,7 +8,7 @@ import subprocess
 import configparser
 
 # Define locations
-locations = ['scaffolding', 'garden-lowres', 'sunflowers-lowres']
+locations = ['sunflowers-lowres', 'scaffolding', 'garden-lowres']
 generate_video = []
 
 top_local_dir = f"/home/username/data"
@@ -25,6 +25,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Process timelapse images.')
     parser.add_argument('--rm-remote', action='store_true', 
                         help='Delete files on the remote device after syncing')
+    parser.add_argument('--no-trawl', action='store_true',
+                        help='Skip trawling for new images')
+    
     return parser.parse_args()
 
 def get_file_paths(location):
@@ -40,19 +43,33 @@ def get_file_paths(location):
     config.read(video_settings_path)
     fps = int(config[location]["fps"])
 
+    crop_coords = None
+    if "crop" in config[location]:
+        crop_str = config[location]["crop"]
+        crop_coords = [int(x) for x in crop_str.split(',')]
+
     video_base = f"{location}-{fps}fps"
 
     video_path = f"{video_base}.{video_ext}"
     video_backup_path = f"{video_base}.prev.{video_ext}"
 
-    return local_dir, local_fpath, remote_fpath, video_path, video_backup_path, fps
+    resolution = None
+    if "resolution" in config[location]:
+        resolution_str = config[location]["resolution"]
+        resolution = [int(x) for x in resolution_str.split(',')]
+
+    return local_dir, local_fpath, remote_fpath, video_path, video_backup_path, fps, crop_coords, resolution
 
 args = parse_args()
 
 for loc in locations:
+    if args.no_trawl:
+        generate_video.append(loc)
+        break
+
     print(f"Trawl for images: {loc}")
 
-    l_dir, l_fpath, r_fpath, video_path, video_backup_path, _ = get_file_paths(loc)
+    l_dir, l_fpath, r_fpath, video_path, video_backup_path, _, _, _ = get_file_paths(loc)
 
     old_file_list = set(glob.glob(l_fpath))
 
@@ -82,29 +99,60 @@ def get_img_shape(img):
     frame = cv2.imread(img)
     return frame.shape[:2]
 
-def read_and_resize(image, target_width, target_height):
+def read_and_resize(image, writer_res, explicit_res, crop_coords):
     frame = cv2.imread(image)
-    if frame.shape[0] != target_height or frame.shape[1] != target_width:
-        frame = cv2.resize(frame, (target_width, target_height))
+    if explicit_res is not None:
+        res = (explicit_res[1], explicit_res[0])
+    else:
+        if frame.shape[0] != writer_res[0] or frame.shape[1] != writer_res[1]:
+            raise Exception(f"Illegal resolution: {frame.shape[:2]}")
+        res = (writer_res[1], writer_res[0])
+    
+    frame = cv2.resize(frame, res)
+
+    if crop_coords is not None:
+        left, top, right, bottom = crop_coords
+        frame = frame[top:bottom, left:right]
+
     return frame
 
 for loc in generate_video:
     print(f"Generate video: {loc}")
-    l_dir, l_fpath, r_fpath, video_path, video_backup_path, fps = get_file_paths(loc)
+    l_dir, l_fpath, r_fpath, video_path, video_backup_path, fps, crop_coords, pre_crop_explicit_res = get_file_paths(loc)
 
     images = sorted(glob.glob(l_fpath))
 
-    height1, width1 = get_img_shape(images[0])
-    height2, width2 = get_img_shape(images[-1])
-    height = min(height1, height2)
-    width = min(width1, width2)
-
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
+
+    if pre_crop_explicit_res is not None:
+        pre_crop_output_res = pre_crop_explicit_res
+    else:
+        pre_crop_output_res = cv2.imread(images[0]).shape[:2]
+    print(video_path)
+    print(fourcc)
+    print(fps)
+    print(pre_crop_output_res)
+
+    if crop_coords is not None:
+        left, top, right, bottom = crop_coords
+        post_height = bottom - top
+        post_width = right - left
+        writer_resolution = (post_width, post_height)
+    else:
+        writer_resolution = (pre_crop_output_res[1], pre_crop_output_res[0])
+
+    video = cv2.VideoWriter(video_path, fourcc, fps, writer_resolution)
 
     for i, image_fpath in enumerate(images):
-        print(f"{i} / {len(images)}")
-        frame = read_and_resize(image_fpath, width, height)
+        
+        frame = read_and_resize(image_fpath, pre_crop_output_res, pre_crop_explicit_res, crop_coords)
         video.write(frame)
 
+        cv2.imshow('Creating Video', frame)
+        
+        # Check if user wants to quit (press 'q')
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break  
+
     video.release()
+    cv2.destroyAllWindows()
