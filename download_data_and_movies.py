@@ -1,27 +1,20 @@
 #!/usr/bin/env python3
-
-import cv2
-import os
-import glob
-import subprocess
 import configparser
+import os
+from pathlib import Path
 
-image_dir = f"/home/username/data/garden-lowres/"
-image_search_path = f"{image_dir}/*.png"
+from download_images import download_remote_files
 
-video_dir = f"/home/username/repos/timelapse"
-video_search_path = f"{video_dir}/*.mp4"
+video_settings_path = "video-settings.txt"
 
-remote_login = "username@192.168.0.XXX"
+tags = ["sunflowers-lowres", "garden-lowres", "scaffolding"]
 
-old_image_list = set(glob.glob(image_search_path))
-rsync_cmd = f"rsync -av --ignore-existing {remote_login}:{image_search_path} {image_dir}"
-subprocess.run(rsync_cmd, shell=True)
-os.sync()
-updated_images_list = set(glob.glob(image_search_path))
-added_images = updated_images_list - old_image_list
-print(f"Added files: {len(added_images)}")
+if not os.path.exists(video_settings_path):
+    raise FileNotFoundError(f"Settings file {video_settings_path} does not exist")
+config = configparser.ConfigParser()
+config.read(video_settings_path)
 
-rsync_cmd = f"rsync -av {remote_login}:{video_search_path} {video_dir}"
-subprocess.run(rsync_cmd, shell=True)
-os.sync()
+for tag in tags:
+    subset = config[tag]
+    image_folder = subset["dir"]
+    download_remote_files(image_folder=image_folder, filter="*.png", ignore_existing=True)
