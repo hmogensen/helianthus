@@ -7,7 +7,7 @@ from download_images import download_remote_files
 
 video_settings_path = "video-settings.txt"
 
-tags = ["sunflowers-lowres", "garden-lowres", "scaffolding"]
+tags = ["garden-lowres", ]#"sunflowers-lowres", "scaffolding"]
 
 if not os.path.exists(video_settings_path):
     raise FileNotFoundError(f"Settings file {video_settings_path} does not exist")
