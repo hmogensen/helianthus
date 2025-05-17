@@ -31,14 +31,21 @@ class NetworkCamera:
 
         os.makedirs(self.location, exist_ok=True)
 
-    def start_capture(self, persistent=True):
-        if persistent:
-            self.persistent_capture()
+    def start_capture(self, continuous_capture=True):
+        if continuous_capture:
+            self.continuous_capture()
         else:
             self.intermittent_capture()
 
-    def persistent_capture(self):
-        self.open_capture()
+    def continuous_capture(self):
+        # Open stream
+        while not self.is_connected:
+            try:
+                self.restart()
+            except Exception as exc:
+                logger.exeption("Exception when opening stream")
+        
+        # Capture timelapse images
         while True:
             try:
                 success = self.capture_image()
@@ -56,13 +63,20 @@ class NetworkCamera:
     def intermittent_capture(self):
         while True:
             try:
-                self.capture_single_image()
-                time.sleep(self.image_interval_s)
+                self.restart()
+                # Check if restart was successful before proceeding in loop
+                if self.is_connected:
+                    success = self.capture_image()
+                    # Only wait if image capture was successful
+                    if success:
+                        self.release_capture()
+                        time.sleep(self.image_interval_s)
             except Exception as exc:
                 logger.exception("Exception during intermittent capture")
                 time.sleep(10)
 
     def capture_image(self):
+        # Workaround for tapo camera
         if self.flush_frames:
             time.sleep(1)
             for i in range(self.flush_frames):
@@ -71,12 +85,10 @@ class NetworkCamera:
                     logger.debug(f"Flushing error {i} / self.flush_frames")
             time.sleep(1)
 
+        # Capture frame
         success, frame = self.cap.read()
         if success:
-            if self.last_frame is not None and np.array_equal(frame, self.last_frame):
-                logger.error("Captured frame is identical to previous frame")
-                raise ValueError("Buffer error: Identical consecutive frames detected")
-
+            # Write image to disc
             timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
             filename = os.path.join(self.location, f"{self.location}-{timestamp}.png")
             cv2.imwrite(filename, frame)
@@ -107,21 +119,18 @@ class NetworkCamera:
         self.is_connected = False
 
     def restart(self):
+        # Count number of failed restarts to determine waiting time
         if self.nbr_of_failed_captures == 3:
             self.delay_start_s = 30
         elif self.nbr_of_failed_captures > 3:
             self.delay_start_s = min(2*self.delay_start_s, 600)
-
+        # If previous restarts failed, wait a bit longer
         if self.delay_start_s:
             logger.info(f"{self.nbr_of_failed_captures} consecutive failed captures. Waiting {self.delay_start_s} seconds")
             time.sleep(self.delay_start_s)
         
+        # Restart capture
         self.release_capture()
         time.sleep(10)
         self.open_capture()
 
-    def capture_single_image(self):
-        # May put more strain on camera hardware if used excessively
-        self.open_capture()
-        self.capture_image()
-        self.release_capture()

@@ -24,7 +24,7 @@ def record_timelapse(cam_id:str, location:str, flush_frames:int, image_interval_
         rtsp_url = f"rtsp://{username}:{password}@{cam_ip}:554/{stream_path}"
     
     cam = NetworkCamera(url=rtsp_url, location=location, flush_frames=flush_frames, image_interval_s=image_interval_s)
-    cam.start_capture(persistent=persistent)
+    cam.start_capture(continuous_capture=persistent)
     
     return cam
 
