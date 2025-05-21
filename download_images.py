@@ -3,10 +3,6 @@ import os
 from pathlib import Path
 import subprocess
 
-local_top_dir = Path("/home/username/data/")
-remote_top_dir = Path("/home/username/repos/timelapse")
-remote_login = "username@192.168.0.46"
-
 
 def clear_remote_images(image_folder):
     
@@ -16,7 +12,7 @@ def clear_remote_images(image_folder):
     ssh_rm_png = f"ssh {remote_login} 'rm -f {remote_pattern}'"
     subprocess.run(ssh_rm_png, shell=True)
 
-def download_remote_files(image_folder, filter, ignore_existing):
+def download_remote_files(image_folder, filter, ignore_existing, local_top_dir, remote_top_dir, remote_login):
 
     local_dir = local_top_dir / image_folder
     remote_dir = remote_top_dir / image_folder

@@ -17,4 +17,13 @@ config.read(video_settings_path)
 for tag in tags:
     subset = config[tag]
     image_folder = subset["dir"]
-    download_remote_files(image_folder=image_folder, filter="*.png", ignore_existing=True)
+
+    download_remote_files(image_folder=image_folder, filter="*.png", ignore_existing=True,
+                          local_top_dir=Path("/home/username/data/"),
+                          remote_top_dir=Path("/home/username/repos/timelapse"),
+                          remote_login="username@192.168.0.XXX")
+    
+    download_remote_files(image_folder=image_folder, filter="*.png", ignore_existing=True,
+                          local_top_dir=Path("/home/username/data/"),
+                          remote_top_dir=Path("/home/username/data"),
+                          remote_login="username@192.168.0.XXX")

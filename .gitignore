@@ -1,4 +1,5 @@
 __pycache__/
 *.png
 *.mp4
+*.jpg
 credentials.txt
