@@ -12,3 +12,7 @@ resolution=1024,1024
 [scaffolding]
 dir=scaffolding
 fps=12
+
+[tradgard-torpet]
+dir=tradgard-torpet
+fps=12

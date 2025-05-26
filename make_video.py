@@ -1,6 +1,7 @@
 import cv2
 from glob import glob
 from pathlib import Path
+import os 
 
 top_dir = Path("/home/username/data/")
 
@@ -47,8 +48,39 @@ def make_video(video_path, image_folder, fps, resolution=None, crop=None, previe
     if preview:
         cv2.destroyAllWindows()
 
-        
+video_settings_path = "video-settings.txt"
+video_ext = "mp4"
+import configparser
+import sys
 
-        
-        
+def return_value_or_none(subset, key):
+    if key in subset:
+        return [int(x) for x in subset[key].split(',')]
+    
+if __name__ == "__main__":
+
+    tag = sys.argv[1]
+    
+    if not os.path.exists(video_settings_path):
+        raise FileNotFoundError(f"Settings file {video_settings_path} does not exist")
+    config = configparser.ConfigParser()
+    config.read(video_settings_path)
+
+    subset = config[tag]
+    dir = subset["dir"]
+    fps = int(subset["fps"])
+
+    resolution = return_value_or_none(subset, "resolution")
+    crop = return_value_or_none(subset, "crop")
+
+    video_base = f"{tag}-{fps}fps"
+    video_path = f"{video_base}.{video_ext}"
+    video_backup_path = f"{video_base}.prev.{video_ext}"
+
+    if os.path.exists(video_path):
+        os.replace(video_path, video_backup_path)
+
+    make_video(video_path=video_path, image_folder=dir, fps=fps, resolution=resolution, crop=crop, preview=True)
+
+
 
