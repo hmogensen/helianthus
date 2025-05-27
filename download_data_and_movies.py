@@ -14,19 +14,25 @@ if not os.path.exists(video_settings_path):
 config = configparser.ConfigParser()
 config.read(video_settings_path)
 
+active_dir = Path("/home/username/repos/timelapse")
+data_dir = Path("/home/username/data")
+remote_login = "username@192.168.0.XXX"
 for image_folder in tags:
 
+    # download images from active directory
     download_remote_files(image_folder=image_folder, filter="*.png", ignore_existing=True,
-                          local_top_dir=Path("/home/username/data/"),
-                          remote_top_dir=Path("/home/username/repos/timelapse"),
-                          remote_login="username@192.168.0.XXX")
+                          local_top_dir=data_dir,
+                          remote_top_dir=active_dir,
+                          remote_login=remote_login)
     
+    # download images from data directory
     download_remote_files(image_folder=image_folder, filter="*.png", ignore_existing=True,
-                          local_top_dir=Path("/home/username/data/"),
-                          remote_top_dir=Path("/home/username/data"),
-                          remote_login="username@192.168.0.XXX")
+                          local_top_dir=data_dir,
+                          remote_top_dir=data_dir,
+                          remote_login=remote_login)
     
+    # download movies from remote active directory, and overwrite corresponding file in local data directory
     download_remote_files(image_folder=image_folder, filter="*.mp4", ignore_existing=False,
-                          local_top_dir=Path("/home/username/data/"),
-                          remote_top_dir=Path("/home/username/repos"),
-                          remote_login="username@192.168.0.XXX")
+                          local_top_dir=data_dir,
+                          remote_top_dir=active_dir,
+                          remote_login=remote_login)
