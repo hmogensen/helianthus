@@ -4,7 +4,7 @@ import argparse
 import configparser
 import os
 
-from download_images import download_remote_files, clear_remote_images
+from download_remote_files import download_remote_files, clear_remote_images
 from make_video import make_video
 
 video_settings_path = "video-settings.txt"

@@ -81,6 +81,3 @@ if __name__ == "__main__":
         os.replace(video_path, video_backup_path)
 
     make_video(video_path=video_path, image_folder=dir, fps=fps, resolution=resolution, crop=crop, preview=True)
-
-
-

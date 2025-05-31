@@ -133,4 +133,3 @@ class NetworkCamera:
         self.release_capture()
         time.sleep(10)
         self.open_capture()
-

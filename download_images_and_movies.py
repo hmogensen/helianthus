@@ -3,7 +3,7 @@ import configparser
 import os
 from pathlib import Path
 
-from download_images import download_remote_files
+from download_remote_files import download_remote_files
 
 video_settings_path = "video-settings.txt"
 
