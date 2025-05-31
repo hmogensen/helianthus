@@ -1,27 +1,46 @@
+from camera_manager import camera_settings, get_credentials
 from network_camera import NetworkCamera
-import configparser
 import argparse
+import tomllib
 
 default_flush_frames = 0
 default_image_interval_s = 600
-
-def record_timelapse(cam_id:str, location:str, flush_frames:int, image_interval_s:float, persistent:bool):
     
-    config = configparser.ConfigParser()
-    config.read('credentials.txt')
+def record_timelapse(cam_stream:str, 
+                     location:str, 
+                     flush_frames:int, 
+                     image_interval_s:float, 
+                     persistent:bool):
     
-    if cam_id not in config:
-        raise ValueError(f"Camera type '{cam_id}' not found in credentials.txt")
+    with open(camera_settings, 'rb') as f:
+        config = tomllib.load(f)
     
-    cam_ip = config[cam_id]['ip']
-    username = config[cam_id]['username']
-    password = config[cam_id]['password']
-    stream_path = config[cam_id]['stream_path']
-    
-    if "axis" in cam_id:
-        rtsp_url = f"rtsp://{username}:{password}@{cam_ip}/{stream_path}"
+    if '.' in cam_stream:
+        camera_type, stream_type = cam_stream.split('.', 1)
     else:
-        rtsp_url = f"rtsp://{username}:{password}@{cam_ip}:554/{stream_path}"
+        camera_type = cam_stream
+        stream_type = None
+        
+    if camera_type not in config:
+        raise ValueError(f"Camera type '{camera_type}' not found in {camera_settings}")
+        
+    cam_ip = config[camera_type]['ip']
+    if stream_type and stream_type in config[camera_type]:
+        stream_path = config[camera_type][stream_type]['stream_path']
+    elif 'stream_path' in config[camera_type]:
+        stream_path = config[camera_type]['stream_path']
+    else:
+        raise ValueError(f"Stream '{stream_type}' not found for camera '{camera_type}'")
+    
+    username, password = get_credentials(camera_type)
+    if not username or not password:
+        raise ValueError(f"No credentials found for camera '{camera_type}'. Use: python camera_manager.py save {camera_type}")
+
+    if 'port' in config[camera_type]:
+        port = config[camera_type]['port']
+        rtsp_url = f"rtsp://{username}:{password}@{cam_ip}:{port}/{stream_path}"
+    else:
+        rtsp_url = f"rtsp://{username}:{password}@{cam_ip}/{stream_path}"
     
     cam = NetworkCamera(url=rtsp_url, location=location, flush_frames=flush_frames, image_interval_s=image_interval_s)
     cam.start_capture(continuous_capture=persistent)
@@ -43,7 +62,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     record_timelapse(
-        cam_id=args.cam,
+        cam_stream=args.cam,
         location=args.loc,
         flush_frames=args.flush,
         image_interval_s=args.interval,

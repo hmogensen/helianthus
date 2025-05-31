@@ -131,8 +131,8 @@ When running services at system boot:
 - **File Permissions**:
   - Make sure the credentials file is only readable by the service user:
     ```bash
-    sudo chown timelapse:timelapse /path/to/credentials.txt
-    sudo chmod 600 /path/to/credentials.txt
+    sudo chown timelapse:timelapse /path/to/cameras.toml
+    sudo chmod 600 /path/to/cameras.toml
     ```
   
 - **SSH Security**:
@@ -147,7 +147,7 @@ When running services at system boot:
 
 Before setting up the service:
 
-- Ensure `credentials.txt` exists in the working directory with the correct camera information
+- Ensure `cameras.toml` exists in the working directory with the correct camera information
 - Verify the user specified in the service file has permissions to:
   - Read the credentials file
   - Connect to the network cameras
