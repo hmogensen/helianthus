@@ -5,10 +5,11 @@ from pathlib import Path
 from download_remote_files import download_remote_files
 
 tags = ["garden-lowres", "tradgard-torpet"]#"sunflowers-lowres", "scaffolding"]
+top_dir = Path(os.path.expanduser("~"))
+active_dir = top_dir / "repos/timelapse"
+data_dir = top_dir / "data"
 
-active_dir = Path("/home/username/repos/timelapse")
-data_dir = Path("/home/username/data")
-remote_login = "username@192.168.0.XXX"
+remote_login = "username@192.168.0.XXX" # Replace with correct IP address
 for image_folder in tags:
 
     # download images from active directory

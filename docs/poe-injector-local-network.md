@@ -33,12 +33,12 @@ sudo nmcli connection add \
   con-name "POE-Camera" \
   ifname YOUR_ETHERNET_INTERFACE \
   ipv4.method manual \
-  ipv4.addresses 192.168.1.XXX0/24 \
+  ipv4.addresses 192.168.1.XXX/24 \
   ipv4.gateway "" \
   ipv4.dns ""
 ```
 
-*Note: Replace `YOUR_ETHERNET_INTERFACE` with your actual interface name (e.g., `eth0` or `enp3s0`).*
+*Note: Replace `YOUR_ETHERNET_INTERFACE` with your actual interface name (e.g., `eth0` or `enp3s0`)., and 192.168.1.XXX with the static IP address of device*
 
 ### 3. Prevent Ethernet from Taking Over Default Route
 
@@ -107,7 +107,7 @@ Confirm that your WiFi interface is used for the default route.
 ### 3. Test Camera Connection
 
 ```bash
-ping 192.168.1.XXX8  # Replace with your camera's IP
+ping 192.168.1.XXX  # Replace with your camera's IP
 ```
 
 ### 4. Test Internet Connectivity

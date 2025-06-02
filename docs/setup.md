@@ -37,13 +37,13 @@ Use the following command to modify your connection, replacing the placeholders 
 ```bash
 sudo nmcli connection modify "Your-WiFi-Connection-Name" \
     ipv4.method manual \
-    ipv4.addresses 192.168.1.XXX0/24 \
+    ipv4.addresses 192.168.1.XXX/24 \
     ipv4.gateway 192.168.1.1 \
     ipv4.dns "8.8.8.8,8.8.4.4"
 ```
 
 - Replace `"Your-WiFi-Connection-Name"` with your actual WiFi connection name from step 1
-- Replace `192.168.1.XXX0/24` with your desired static IP address and subnet mask
+- Replace `192.168.1.XXX/24` with your desired static IP address and subnet mask
 - Replace `192.168.1.1` with your router's IP address (gateway)
 - You can keep the Google DNS servers (`8.8.8.8,8.8.4.4`) or replace them with your preferred DNS
 
