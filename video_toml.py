@@ -11,33 +11,33 @@ from video_template import VideoTemplate
 
 @dataclass
 class VideoToml:
-    # If parent field has a value, it means current template will inherit from parent template 
+    # If 'copy' field has a value, it means current template will inherit from parent template 
     # and then overwrite wherever current template has a value.
     # Included here for clarity, but intentionally commented out
-    # parent
+    # copy : str
     # Directory containing images
-    dir = None
+    dir : Path = None
     # Frames per second
-    fps = None
+    fps : Number = None
     # Set resolution
-    resolution = None
+    resolution : tuple[Number, Number] = None
     # Resolution of final movie
-    output_resolution = None
+    output_resolution : tuple[Number, Number] = None
     # Cropping if applicable
-    crop = None
+    crop : tuple[Number, Number, Number, Number]= None
     # Rotation of image
-    rotation = None
+    rotation : Number = None
     # Grayscale (0 or 1)
-    gray = None
+    gray : int = None
     # Histogram normalization (0 or 1)
-    normalize = None
+    normalize : int = None 
     # Subtract background (0 or 1)
-    subtract = None
+    subtract : int = None
     # Thresholding values for filtering - 0, 1, 2, 3 or 6 element vector
-    threshold = None
+    threshold : Number | np.array = None
 
     # Parse attributes to generate template with settings for video generation
-    def get_video_template(self, top_dir):
+    def get_video_template(self, top_dir:Path=None):
 
         top_dir = top_dir or Path(os.path.expanduser("~")) / "data"
 
@@ -98,7 +98,7 @@ class VideoToml:
                     )
 
 
-# Read settings file - separate function to allow for recursive calls if parent field is used to indicate inheritance
+# Read settings file - separate function to allow for recursive calls if 'copy' field is used to indicate inheritance
 def _read_toml(video_id:str, recursion_list):
 
     video_settings_path = 'video-settings.toml'
@@ -113,7 +113,7 @@ def _read_toml(video_id:str, recursion_list):
     with open(video_settings_path, 'rb') as f:
         settings = tomllib.load(f)[video_id]
 
-    parent = settings.get('parent')
+    parent = settings.get('copy')
     if parent is None:
         video_toml = VideoToml()
     else:
@@ -131,4 +131,5 @@ def parse_video_settings(video_id:str, top_dir:Path=None, recursion_list=None):
     video_toml = _read_toml(video_id=video_id, recursion_list=None)
     
     return video_toml.get_video_template(top_dir=top_dir)
+
     
