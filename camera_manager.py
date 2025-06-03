@@ -3,21 +3,18 @@ import toml
 import keyring
 from tabulate import tabulate
 
-camera_settings = "cameras.toml"
+camera_settings_path = "cameras.toml"
 
 def load_cameras(toml_file):
     with open(toml_file, 'r') as f:
-        config = toml.load(f)
-    return config
+        settings = toml.load(f)
+    return settings
 
 def check_credentials_saved(cam_id):
-    try:
-        password = keyring.get_password("camera_pass", cam_id)
-        return "Yes" if password else "No"
-    except Exception:
-        return "No"
+    password = keyring.get_password("camera_pass", cam_id)
+    return "Yes" if password else "No"
 
-def list_cameras(toml_file=camera_settings):
+def list_cameras(toml_file=camera_settings_path):
     try:
         cameras = load_cameras(toml_file)
         
@@ -86,7 +83,7 @@ def main():
     command = sys.argv[1]
     
     if command == "list":
-        toml_file = sys.argv[2] if len(sys.argv) > 2 else camera_settings
+        toml_file = sys.argv[2] if len(sys.argv) > 2 else camera_settings_path
         list_cameras(toml_file)
     
     elif command == "save" and len(sys.argv) == 3:

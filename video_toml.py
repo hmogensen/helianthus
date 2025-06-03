@@ -1,7 +1,7 @@
 from dataclasses import dataclass, fields
 from pathlib import Path
 import os
-import tomllib
+import toml
 from glob import glob
 import numpy as np
 from numbers import Number
@@ -111,7 +111,7 @@ def _read_toml(video_id:str, recursion_list):
     recursion_list.append(video_id)
 
     with open(video_settings_path, 'rb') as f:
-        settings = tomllib.load(f)[video_id]
+        settings = toml.load(f)[video_id]
 
     parent = settings.get('copy')
     if parent is None:

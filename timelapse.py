@@ -1,7 +1,8 @@
-from camera_manager import camera_settings, get_credentials
+from camera_manager import camera_settings_path # , get_credentials
+from interim_password_manager import get_credentials
 from network_camera import NetworkCamera
 import argparse
-import tomllib
+import toml
 
 default_flush_frames = 0
 default_image_interval_s = 600
@@ -12,8 +13,8 @@ def record_timelapse(cam_stream:str,
                      image_interval_s:float, 
                      persistent:bool):
     
-    with open(camera_settings, 'rb') as f:
-        config = tomllib.load(f)
+    with open(camera_settings_path, 'r') as f:
+        config = toml.load(f)
     
     if '.' in cam_stream:
         camera_type, stream_type = cam_stream.split('.', 1)
@@ -22,7 +23,7 @@ def record_timelapse(cam_stream:str,
         stream_type = None
         
     if camera_type not in config:
-        raise ValueError(f"Camera type '{camera_type}' not found in {camera_settings}")
+        raise ValueError(f"Camera type '{camera_type}' not found in {camera_settings_path}")
         
     cam_ip = config[camera_type]['ip']
     if stream_type and stream_type in config[camera_type]:
@@ -31,7 +32,6 @@ def record_timelapse(cam_stream:str,
         stream_path = config[camera_type]['stream_path']
     else:
         raise ValueError(f"Stream '{stream_type}' not found for camera '{camera_type}'")
-    
     username, password = get_credentials(camera_type)
     if not username or not password:
         raise ValueError(f"No credentials found for camera '{camera_type}'. Use: python camera_manager.py save {camera_type}")
