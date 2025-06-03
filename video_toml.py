@@ -33,8 +33,8 @@ class VideoToml:
     normalize : int = None 
     # Subtract background (0 or 1)
     subtract : int = None
-    # Thresholding values for filtering - 0, 1, 2, 3 or 6 element vector
-    threshold : Number | np.array = None
+    # # Thresholding values for filtering - 0, 1, 2, 3 or 6 element vector
+    # threshold : Number | np.array = None
 
     # Parse attributes to generate template with settings for video generation
     def get_video_template(self, top_dir:Path=None):
@@ -52,7 +52,7 @@ class VideoToml:
         grayscale = self.gray
         normalize = self.normalize
         subtract_background = self.subtract
-        threshold = self.threshold
+        # threshold = self.threshold
 
         input_resolution_fixed = input_resolution is not None
         if not input_resolution_fixed:
@@ -65,23 +65,23 @@ class VideoToml:
             else:
                 output_resolution = input_resolution
 
-        if threshold is None:
-            lower_threshold = -np.inf
-            upper_threshold = np.inf
-        if isinstance(threshold, Number):
-            lower_threshold = threshold
-            upper_threshold = np.inf
-        elif isinstance(threshold, list):
-            if len(threshold) == 2:
-                lower_threshold, upper_threshold = threshold
-            elif threshold == 3:
-                lower_threshold = np.array(threshold)
-                upper_threshold = np.full_like(lower_threshold, fill_value=np.inf)
-            elif threshold == 6:
-                lower_threshold = np.array(threshold[:3])
-                upper_threshold = np.array(threshold[3:])
-            else:
-                raise Exception(f"Illegal dimension of threshold array: {len(threshold)}. Allowed dimensions are 0, 1, 2, 3 or 6")
+        # if threshold is None:
+        #     lower_threshold = -np.inf
+        #     upper_threshold = np.inf
+        # if isinstance(threshold, Number):
+        #     lower_threshold = threshold
+        #     upper_threshold = np.inf
+        # elif isinstance(threshold, list):
+        #     if len(threshold) == 2:
+        #         lower_threshold, upper_threshold = threshold
+        #     elif threshold == 3:
+        #         lower_threshold = np.array(threshold)
+        #         upper_threshold = np.full_like(lower_threshold, fill_value=np.inf)
+        #     elif threshold == 6:
+        #         lower_threshold = np.array(threshold[:3])
+        #         upper_threshold = np.array(threshold[3:])
+        #     else:
+        #         raise Exception(f"Illegal dimension of threshold array: {len(threshold)}. Allowed dimensions are 0, 1, 2, 3 or 6")
             
         return VideoTemplate(images=images, 
                     fps=fps, 
@@ -92,8 +92,8 @@ class VideoToml:
                     grayscale=grayscale,
                     normalize=normalize,
                     subtract_background=subtract_background,
-                    lower_threshold=lower_threshold,
-                    upper_threshold=upper_threshold,
+            #        lower_threshold=lower_threshold,
+            #        upper_threshold=upper_threshold,
                     output_resolution=output_resolution
                     )
 
@@ -110,7 +110,7 @@ def _read_toml(video_id:str, recursion_list):
         raise RecursionError(f"Circular reference for video template {video_id}")
     recursion_list.append(video_id)
 
-    with open(video_settings_path, 'rb') as f:
+    with open(video_settings_path, 'r') as f:
         settings = toml.load(f)[video_id]
 
     parent = settings.get('copy')
