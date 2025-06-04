@@ -9,26 +9,22 @@ import json
 
 app = Flask(__name__)
 
+service_ext = "service"
+
 class SystemdManager:
     def __init__(self):
-        self.service_pattern = "timelapse-*.service"
+        self.service_pattern = f"timelapse-*.{service_ext}"
         self.service_dir = "/etc/systemd/system/"
     
     def get_timelapse_services(self):
-        """Get all timelapse service files"""
         try:
             services = glob.glob(f"{self.service_dir}{self.service_pattern}")
-            if not services:
-                user_service_dir = Path.home() / ".config/systemd/user/"
-                services = glob.glob(f"{user_service_dir}{self.service_pattern}")
-            
             return [Path(service).stem for service in services]
         except Exception as e:
             print(f"Error finding services: {e}")
             return []
     
     def get_service_status(self, service_name):
-        """Get the status of a systemd service"""
         try:
             result = subprocess.run(
                 ["systemctl", "is-active", service_name],
@@ -68,11 +64,7 @@ class SystemdManager:
             return False, f"Error stopping service: {e}"
     
     def parse_service_file(self, service_name):
-        service_file = f"{self.service_dir}{service_name}"
-        
-        if not Path(service_file).exists():
-            user_service_dir = Path.home() / ".config/systemd/user/"
-            service_file = f"{user_service_dir}{service_name}"
+        service_file = f"{self.service_dir}{service_name}.{service_ext}"
         
         try:
             with open(service_file, 'r') as f:
@@ -118,7 +110,7 @@ class SystemdManager:
         services_info = []
         
         for service in services:
-            service_id = service.replace("timelapse-", "").replace(".service", "")
+            service_id = service.replace("timelapse-", "").replace(f".{service_ext}", "")
             status = self.get_service_status(service)
             info = self.parse_service_file(service)
             
@@ -133,7 +125,6 @@ class SystemdManager:
 
 manager = SystemdManager()
 
-# HTML Template
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -301,14 +292,14 @@ def index():
 
 @app.route('/start/<service_id>')
 def start_service(service_id):
-    service_name = f"timelapse-{service_id}.service"
+    service_name = f"timelapse-{service_id}.{service_ext}"
     success, message = manager.start_service(service_name)
     message_type = 'success' if success else 'error'
     return redirect(url_for('index', message=message, type=message_type))
 
 @app.route('/stop/<service_id>')
 def stop_service(service_id):
-    service_name = f"timelapse-{service_id}.service"
+    service_name = f"timelapse-{service_id}.{service_ext}"
     success, message = manager.stop_service(service_name)
     message_type = 'success' if success else 'error'
     return redirect(url_for('index', message=message, type=message_type))
