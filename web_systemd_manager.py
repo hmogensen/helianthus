@@ -9,6 +9,7 @@ import json
 
 app = Flask(__name__)
 
+filter_services = ["reolink-lowres", "tapo-lowres"]
 service_ext = "service"
 
 class SystemdManager:
@@ -19,7 +20,7 @@ class SystemdManager:
     def get_timelapse_services(self):
         try:
             services = glob.glob(f"{self.service_dir}{self.service_pattern}")
-            return [Path(service).stem for service in services]
+            return [Path(service).stem for service in services if any([s in service for s in filter_services])]
         except Exception as e:
             print(f"Error finding services: {e}")
             return []
