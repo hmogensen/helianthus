@@ -232,8 +232,12 @@ HTML_TEMPLATE = """
             </div>
             
             <div class="buttons">
+                {% if service.status != 'active' %}
                 <a href="/start/{{ service.service_id }}" class="btn btn-start">▶️ Start</a>
+                {% endif %}
+                {% if service.status == 'active' %}
                 <a href="/stop/{{ service.service_id }}" class="btn btn-stop">⏹️ Stop</a>
+                {% endif %}
                 <button class="btn btn-info" onclick="toggleInfo('{{ service.service_id }}')">ℹ️ Info</button>
             </div>
             
