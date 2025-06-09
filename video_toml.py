@@ -19,6 +19,8 @@ class VideoToml:
     dir : Path = None
     # Frames per second
     fps : Number = None
+    # Use every n:th frame
+    skip : int = None
     # Set resolution
     resolution : tuple[Number, Number] = None
     # Resolution of final movie
@@ -43,6 +45,8 @@ class VideoToml:
 
         pattern = str(top_dir / self.dir/ '*.png')
         images = sorted(glob(pattern))
+        if self.skip:
+            images = images[::self.skip]
         
         fps = self.fps
         crop = self.crop

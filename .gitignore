@@ -1,6 +1,7 @@
 __pycache__/
 *.png
 *.mp4
+*.gif
 *.jpg
 cameras.toml
 video-settings.toml

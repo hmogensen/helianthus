@@ -1,7 +1,42 @@
 from dataclasses import dataclass
 from numbers import Number
+from pathlib import Path
+from PIL import Image
+from tqdm import tqdm
 import numpy as np
 import cv2
+
+@dataclass
+class GIF_Writer:
+    video_path : Path
+    fps : Number
+    output_resolution : tuple[int, int] = None
+    frames : list = None
+
+    def __post_init__(self):
+        if self.frames is None:
+            self.frames = []
+    
+    def write(self, frame):
+        if self.output_resolution:
+            frame = cv2.resize(frame, self.output_resolution)
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        pil_frame = Image.fromarray(rgb_frame)
+        self.frames.append(pil_frame)
+    
+    def release(self):
+        duration_ms = int(1000 / self.fps)
+        print("Writing video, stand by ...", end=" ")
+        self.frames[0].save(
+            self.video_path,
+            save_all=True,
+            append_images=self.frames[1:],
+            duration=duration_ms,
+            loop=0,
+            optimize=True,
+            colors=32
+        )
+        print("Done")
 
 @dataclass
 class VideoTemplate:
@@ -45,17 +80,15 @@ class VideoTemplate:
     # Resolution of rendered video  
     output_resolution : tuple[int, int] = None
 
-    def generate_writer(self, video_path:str):
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        writer = cv2.VideoWriter(video_path, fourcc, self.fps, self.output_resolution)
-        return writer
+    def render_video(self, video_path:Path, preview:bool):
 
-    def close_writer(self, writer:cv2.VideoWriter, preview=True):
-        writer.release()
-        if preview:
-            cv2.destroyAllWindows()
-
-    def append_video(self, writer:cv2.VideoWriter, preview:bool):
+        if str(video_path).endswith('.gif'):
+            writer = GIF_Writer(video_path, self.fps, self.output_resolution)
+        else:
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            # fourcc = cv2.VideoWriter_fourcc(*'H264')
+            writer = cv2.VideoWriter(video_path, fourcc, self.fps, self.output_resolution)
+        
         if self.crop:
             left_crop, top_crop, right_crop, bottom_crop = self.crop
         
@@ -65,7 +98,9 @@ class VideoTemplate:
             center = (width // 2, height // 2)
             rotation_matrix = cv2.getRotationMatrix2D(center, self.rotation, 1.0)
 
-        for image in self.images:
+        success = True
+    
+        for image in tqdm(self.images, desc="Processing images"):
             frame = cv2.imread(image)
 
             if not self.input_resolution_fixed and list(frame.shape[:2]) != list(self.input_resolution[::-1]):
@@ -80,6 +115,9 @@ class VideoTemplate:
             if self.crop is not None:
                 frame = frame[top_crop:bottom_crop, left_crop:right_crop]
 
+            if self.output_resolution:
+                frame = cv2.resize(frame, self.output_resolution)
+            
             if list(frame.shape[:2]) != list(self.output_resolution[::-1]):
                 raise Exception(f"Inconsistent cropped resolution: {frame.shape[:2]} vs {self.output_resolution[::-1]:}")
             
@@ -117,13 +155,18 @@ class VideoTemplate:
             #             frame = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
             #         else:
             #             frame = thresh
-            
+
             writer.write(frame)
 
             if preview:
                 cv2.imshow('Preview', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    return False
-        return True
+                    success = False
+                    break
     
+        writer.release()
+        if preview:
+            cv2.destroyAllWindows()
+        return success
+
     
