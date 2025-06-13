@@ -6,37 +6,7 @@ from tqdm import tqdm
 import numpy as np
 import cv2
 
-@dataclass
-class GIF_Writer:
-    video_path : Path
-    fps : Number
-    output_resolution : tuple[int, int] = None
-    frames : list = None
-
-    def __post_init__(self):
-        if self.frames is None:
-            self.frames = []
-    
-    def write(self, frame):
-        if self.output_resolution:
-            frame = cv2.resize(frame, self.output_resolution)
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        pil_frame = Image.fromarray(rgb_frame)
-        self.frames.append(pil_frame)
-    
-    def release(self):
-        duration_ms = int(1000 / self.fps)
-        print("Writing video, stand by ...", end=" ")
-        self.frames[0].save(
-            self.video_path,
-            save_all=True,
-            append_images=self.frames[1:],
-            duration=duration_ms,
-            loop=0,
-            optimize=True,
-            colors=32
-        )
-        print("Done")
+from gif_writer import GIF_Writer
 
 @dataclass
 class VideoTemplate:
@@ -80,15 +50,8 @@ class VideoTemplate:
     # Resolution of rendered video  
     output_resolution : tuple[int, int] = None
 
-    def render_video(self, video_path:Path, preview:bool):
-
-        if str(video_path).endswith('.gif'):
-            writer = GIF_Writer(video_path, self.fps, self.output_resolution)
-        else:
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            # fourcc = cv2.VideoWriter_fourcc(*'H264')
-            writer = cv2.VideoWriter(video_path, fourcc, self.fps, self.output_resolution)
-        
+    def process_frames(self):
+        """Iterator that yields processed frames one by one"""
         if self.crop:
             left_crop, top_crop, right_crop, bottom_crop = self.crop
         
@@ -98,9 +61,7 @@ class VideoTemplate:
             center = (width // 2, height // 2)
             rotation_matrix = cv2.getRotationMatrix2D(center, self.rotation, 1.0)
 
-        success = True
-    
-        for image in tqdm(self.images, desc="Processing images"):
+        for image in self.images:
             frame = cv2.imread(image)
 
             if not self.input_resolution_fixed and list(frame.shape[:2]) != list(self.input_resolution[::-1]):
@@ -133,29 +94,20 @@ class VideoTemplate:
                     frame = cv2.equalizeHist(frame)
                     frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
             
-            # if self.lower_threshold is not None or self.upper_threshold is not None:
+            yield frame
 
-            #     if isinstance(self.lower_threshold, np.ndarray) and isinstance(self.upper_threshold, np.ndarray):
-            #         mask = cv2.inRange(frame, self.lower_threshold, self.upper_threshold)
-            #         frame = cv2.bitwise_and(frame, frame, mask=mask)
-            #     else:
-            #         if len(frame.shape) == 3:
-            #             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            #         else:
-            #             gray = frame
-                    
-            #         if self.lower_threshold is not None and self.upper_threshold is not None:
-            #             _, thresh = cv2.threshold(gray, self.lower_threshold, self.upper_threshold, cv2.THRESH_BINARY)
-            #         elif self.lower_threshold is not None:
-            #             _, thresh = cv2.threshold(gray, self.lower_threshold, 255, cv2.THRESH_BINARY)
-            #         elif self.upper_threshold is not None:
-            #             _, thresh = cv2.threshold(gray, self.upper_threshold, 255, cv2.THRESH_BINARY_INV)
-                    
-            #         if len(frame.shape) == 3:
-            #             frame = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
-            #         else:
-            #             frame = thresh
+    def render_video(self, video_path:Path, preview:bool):
 
+        if str(video_path).endswith('.gif'):
+            writer = GIF_Writer(video_path, self.fps, self.output_resolution)
+        else:
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            # fourcc = cv2.VideoWriter_fourcc(*'H264')
+            writer = cv2.VideoWriter(video_path, fourcc, self.fps, self.output_resolution)
+
+        success = True
+    
+        for frame in tqdm(self.process_frames(), desc="Processing images", total=len(self.images)):
             writer.write(frame)
 
             if preview:
@@ -163,7 +115,7 @@ class VideoTemplate:
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     success = False
                     break
-    
+        
         writer.release()
         if preview:
             cv2.destroyAllWindows()
