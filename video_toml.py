@@ -6,6 +6,7 @@ from glob import glob
 import numpy as np
 from numbers import Number
 import cv2
+import re
 
 from video_template import VideoTemplate
 
@@ -21,6 +22,8 @@ class VideoToml:
     fps : Number = None
     # Use every n:th frame
     skip : int = None
+    # Start at date and time given by string (formatted YY-mm-DD-HH-MM-SS)
+    startat : str = None
     # Set resolution
     resolution : tuple[Number, Number] = None
     # Resolution of final movie
@@ -45,6 +48,12 @@ class VideoToml:
 
         pattern = str(top_dir / self.dir/ '*.png')
         images = sorted(glob(pattern))
+        
+        if self.startat:
+            while len(self.startat.split('-')) < 5:
+                self.startat += '-00'
+            images = [i for i in images if re.search(r'(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})', os.path.basename(i)).group(1) >= self.startat]
+
         if self.skip:
             images = images[::self.skip]
         
