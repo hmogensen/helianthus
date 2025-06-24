@@ -114,7 +114,7 @@ class VideoToml:
 # Read settings file - separate function to allow for recursive calls if 'copy' field is used to indicate inheritance
 def _read_toml(video_id:str, recursion_list):
 
-    video_settings_path = 'video-settings.toml'
+    video_settings_path = Path(os.path.expanduser("~")) / "settings" / "video-settings.toml"
     assert os.path.isfile(video_settings_path)
 
     if recursion_list is None:

@@ -1,7 +1,11 @@
 import toml
+from pathlib import Path
+import os 
+
+credentials = Path(os.path.expanduser("~")) / "settings" / "credentials.toml"
 
 def _get_settings(tag:str):
-    with open('credentials.toml', 'r') as f:
+    with open(credentials, 'r') as f:
         settings = toml.load(f)[tag]
     return settings
 

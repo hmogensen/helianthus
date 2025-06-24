@@ -2,8 +2,10 @@
 import toml
 import keyring
 from tabulate import tabulate
+from pathlib import Path
+import os
 
-camera_settings_path = "cameras.toml"
+camera_settings_path = Path(os.path.expanduser("~")) / "settings" / "cameras.toml"
 
 def load_cameras(toml_file):
     with open(toml_file, 'r') as f:

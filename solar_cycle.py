@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from video_toml import parse_video_settings
 
-template = parse_video_settings("garden-lowres")
+template = parse_video_settings("garden-gray")
 
 time = []
 light_intensity = []
