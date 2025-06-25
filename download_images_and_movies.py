@@ -47,4 +47,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(args)
+    main(tags=args.remote, make_movie=args.make_movie)

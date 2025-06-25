@@ -5,17 +5,19 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+from ground_truth_solar_metrics import get_sun_times
+
 sunrise_threshold = {'avg_brightness': 30, 
                      'bright_ratio': 0.02, 
                      'hsv_brightness': 20, 
                      'mean_intensity': 20, 
                      'median_intensity': 5, 
-                     'sky_brightness': 40}
+                     'sky_brightness': 40,
+                     }
 
 def load_and_plot_sunlight_data(fpath):
     with h5py.File(fpath, 'r') as f:
         metrics = [key for key in f.keys() if key != 'timestamps']
-        print(metrics)
        
         titles = [metric.replace('_', ' ').title() for metric in metrics]       
         timestamps = [datetime.fromtimestamp(ts) for ts in f['timestamps'][:]]
@@ -58,6 +60,17 @@ def _find_sunrise_sunset(timestamps, intensity_data, threshold):
     return sunrises, sunsets
 
 def plot_daylight_analysis(timestamps, metrics_data, metrics_names, thresholds):
+    lat, lng = 55.8391, 13.3034
+    start_date = min(timestamps).strftime('%Y-%m-%d')
+    end_date = max(timestamps).strftime('%Y-%m-%d')
+    timezone = 'Europe/Stockholm'
+
+    sun_data = get_sun_times(lat, lng, start_date, end_date, timezone)
+    official_times = {}
+    for date_str, sunrise, sunset in sun_data:
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        day_of_year = date_obj.timetuple().tm_yday
+        official_times[day_of_year] = {'sunrise': sunrise, 'sunset': sunset}
 
     for metric_name, metric_data in zip(metrics_names, metrics_data):            
         threshold = thresholds.get(metric_name, 10)  # Default to 10 if metric not in dict
@@ -98,10 +111,33 @@ def plot_daylight_analysis(timestamps, metrics_data, metrics_names, thresholds):
         day_lengths = [d['day_length'] for d in daily_data]
         sunrise_times = [d['sunrise'] for d in daily_data]
         sunset_times = [d['sunset'] for d in daily_data]
+
+        official_sunrise_times = []
+        official_sunset_times = []
+        official_day_lengths = []
+        
+        for d in daily_data:
+            day_of_year = d['date'].timetuple().tm_yday
+            if day_of_year in official_times:
+                official_sunrise = official_times[day_of_year]['sunrise']
+                official_sunset = official_times[day_of_year]['sunset']
+                official_sunrise_times.append(official_sunrise)
+                official_sunset_times.append(official_sunset)
+                official_day_lengths.append(official_sunset - official_sunrise)
+            else:
+                official_sunrise_times.append(None)
+                official_sunset_times.append(None)
+                official_day_lengths.append(None)
         
         ax1.plot(dates, day_lengths, 'o-', color='gold', linewidth=2, markersize=4)
+        valid_official = [(d, dl) for d, dl in zip(dates, official_day_lengths) if dl is not None]
+        if valid_official:
+            valid_dates, valid_day_lengths = zip(*valid_official)
+            ax1.plot(valid_dates, valid_day_lengths, 'r--', linewidth=2, 
+                    label='Official', alpha=0.7)
         ax1.set_ylabel('Day Length (hours)')
         ax1.set_title('Length of Day')
+        ax1.legend()
         ax1.grid(True, alpha=0.3)
         ax1.tick_params(axis='x', rotation=45)
         
@@ -114,6 +150,19 @@ def plot_daylight_analysis(timestamps, metrics_data, metrics_names, thresholds):
         ax2.set_xlabel('Date')
         ax2.set_title('Sunrise and Sunset Times')
         ax2.legend()
+
+        valid_sunrise = [(d, st) for d, st in zip(dates, official_sunrise_times) if st is not None]
+        if valid_sunrise:
+            valid_dates, valid_sunrise_times = zip(*valid_sunrise)
+            ax2.plot(valid_dates, valid_sunrise_times, '--', color='orange', 
+                    label='Official', linewidth=2, markersize=4, alpha=0.7)
+        
+        valid_sunset = [(d, st) for d, st in zip(dates, official_sunset_times) if st is not None]
+        if valid_sunset:
+            valid_dates, valid_sunset_times = zip(*valid_sunset)
+            ax2.plot(valid_dates, valid_sunset_times, '--', color='darkred', 
+                    label='Official', linewidth=2, markersize=4, alpha=0.7)
+            
         ax2.grid(True, alpha=0.3)
         ax2.tick_params(axis='x', rotation=45)
         
