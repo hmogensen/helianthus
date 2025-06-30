@@ -36,6 +36,22 @@ class NetworkCamera:
             self.continuous_capture()
         else:
             self.intermittent_capture()
+    
+    def single_capture(self):
+        while True:
+            try:
+                self.restart()
+                # Check if restart was successful before proceeding in loop
+                if self.is_connected:
+                    success = self.capture_image()
+                    # Only wait if image capture was successful
+                    if success:
+                        self.release_capture()
+                        return
+            except Exception as exc:
+                logger.exception("Exception during intermittent capture")
+                time.sleep(600)
+
 
     def continuous_capture(self):
         # Open stream

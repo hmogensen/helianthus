@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 
 
-def clear_remote_images(image_folder):
+def clear_remote_images(image_folder, remote_top_dir, remote_login):
     
     remote_dir = remote_top_dir / image_folder
     remote_pattern = str(remote_dir / "*.png")

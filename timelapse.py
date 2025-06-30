@@ -11,7 +11,8 @@ def record_timelapse(cam_stream:str,
                      location:str, 
                      flush_frames:int, 
                      image_interval_s:float, 
-                     persistent:bool):
+                     persistent:bool,
+                     snapshot:bool):
     
     with open(camera_settings_path, 'r') as f:
         config = toml.load(f)
@@ -43,7 +44,10 @@ def record_timelapse(cam_stream:str,
         rtsp_url = f"rtsp://{username}:{password}@{cam_ip}/{stream_path}"
     
     cam = NetworkCamera(url=rtsp_url, location=location, flush_frames=flush_frames, image_interval_s=image_interval_s)
-    cam.start_capture(continuous_capture=persistent)
+    if snapshot:
+        cam.single_capture()
+    else:
+        cam.start_capture(continuous_capture=persistent)
     
     return cam
 
@@ -58,6 +62,8 @@ if __name__ == "__main__":
                         help=f'Interval between image captures in seconds. Default: {default_image_interval_s}')
     parser.add_argument('--restart-every-cycle', '-r', action='store_true',
                     help='Restart the camera connection on every capture cycle')
+    parser.add_argument('--snapshot', '-s', action='store_true', default=False,
+                        help='Capture single frame')
     
     args = parser.parse_args()
     
@@ -66,5 +72,6 @@ if __name__ == "__main__":
         location=args.loc,
         flush_frames=args.flush,
         image_interval_s=args.interval,
-        persistent=not args.restart_every_cycle
+        persistent=not args.restart_every_cycle,
+        snapshot=args.snapshot
     )
