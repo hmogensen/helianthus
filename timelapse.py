@@ -1,18 +1,24 @@
+import argparse
+import os
+import toml
+
 from camera_manager import camera_settings_path # , get_credentials
 from interim_password_manager import get_credentials
+from mock_network_camera import MockNetworkCamera
 from network_camera import NetworkCamera
-import argparse
-import toml
 
 default_flush_frames = 0
 default_image_interval_s = 600
-def record_timelapse(cam_stream:str, 
+
+def create_network_camera(cam_stream:str, 
                      description:str, 
                      flush_frames:int, 
-                     image_interval_s:float, 
-                     persistent:bool,
-                     snapshot:bool):
+                     image_interval_s:float,
+                     test:bool=False):
     
+    
+    if not os.path.isfile(camera_settings_path):
+        raise FileNotFoundError(f"File {camera_settings_path} not found")
     with open(camera_settings_path, 'r') as f:
         config = toml.load(f)
     
@@ -42,7 +48,20 @@ def record_timelapse(cam_stream:str,
     else:
         rtsp_url = f"rtsp://{username}:{password}@{cam_ip}/{stream_path}"
     
-    cam = NetworkCamera(url=rtsp_url, location=description, flush_frames=flush_frames, image_interval_s=image_interval_s)
+    input_args = {"url": rtsp_url,
+                  "description": description,
+                  "flush_frames": flush_frames,
+                  "image_interval_s": image_interval_s,
+                  }
+    if test:
+        cam = MockNetworkCamera(**input_args)
+    else:
+        cam = NetworkCamera(**input_args)
+    return cam
+
+def record_timelapse(cam:NetworkCamera,
+                     persistent:bool,
+                     snapshot:bool):
     if snapshot:
         cam.snapshot_capture()
     else:
@@ -55,22 +74,27 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Time lapse recording with network cameras')
     parser.add_argument('cam', help='Camera id')
     parser.add_argument('descr', type=str, help='Location (e.g. "garden") or portrayed object (e.g. "sprouting plant")')
-    parser.add_argument('--flush', '-f', type=int, default=default_flush_frames, 
-                        help=f'Number of frames to flush. Default: {default_flush_frames}')
+    parser.add_argument('--test', '-t', action='store_true', default=False)
+    parser.add_argument('--snapshot', '-s', action='store_true', default=False,
+                        help='Capture single frame')
     parser.add_argument('--interval', '-i', type=int, default=default_image_interval_s, 
                         help=f'Interval between image captures in seconds. Default: {default_image_interval_s}')
     parser.add_argument('--restart-every-cycle', '-r', action='store_true',
                     help='Restart the camera connection on every capture cycle')
-    parser.add_argument('--snapshot', '-s', action='store_true', default=False,
-                        help='Capture single frame')
+    parser.add_argument('--flush', '-f', type=int, default=default_flush_frames, 
+                        help=f'Number of frames to flush. Default: {default_flush_frames}')
     
     args = parser.parse_args()
     
-    record_timelapse(
-        cam_stream=args.cam,
+    cam = create_network_camera(cam_stream=args.cam,
         description=args.descr,
         flush_frames=args.flush,
         image_interval_s=args.interval,
+        test=args.test,
+    )
+
+    record_timelapse(
+        cam=cam,
         persistent=not args.restart_every_cycle,
         snapshot=args.snapshot
     )
