@@ -6,9 +6,8 @@ import toml
 
 default_flush_frames = 0
 default_image_interval_s = 600
-    
 def record_timelapse(cam_stream:str, 
-                     location:str, 
+                     description:str, 
                      flush_frames:int, 
                      image_interval_s:float, 
                      persistent:bool,
@@ -43,9 +42,9 @@ def record_timelapse(cam_stream:str,
     else:
         rtsp_url = f"rtsp://{username}:{password}@{cam_ip}/{stream_path}"
     
-    cam = NetworkCamera(url=rtsp_url, location=location, flush_frames=flush_frames, image_interval_s=image_interval_s)
+    cam = NetworkCamera(url=rtsp_url, location=description, flush_frames=flush_frames, image_interval_s=image_interval_s)
     if snapshot:
-        cam.single_capture()
+        cam.snapshot_capture()
     else:
         cam.start_capture(continuous_capture=persistent)
     
@@ -55,7 +54,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Time lapse recording with network cameras')
     parser.add_argument('cam', help='Camera id')
-    parser.add_argument('loc', type=str, help='Location (e.g. "garden") or portrayed object (e.g. "sprouting plant")')
+    parser.add_argument('descr', type=str, help='Location (e.g. "garden") or portrayed object (e.g. "sprouting plant")')
     parser.add_argument('--flush', '-f', type=int, default=default_flush_frames, 
                         help=f'Number of frames to flush. Default: {default_flush_frames}')
     parser.add_argument('--interval', '-i', type=int, default=default_image_interval_s, 
@@ -69,7 +68,7 @@ if __name__ == "__main__":
     
     record_timelapse(
         cam_stream=args.cam,
-        location=args.loc,
+        description=args.descr,
         flush_frames=args.flush,
         image_interval_s=args.interval,
         persistent=not args.restart_every_cycle,
