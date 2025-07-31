@@ -12,36 +12,39 @@ app = Flask(__name__)
 filter_services = ["reolink-lowres", "tapo-lowres"]
 service_ext = "service"
 
+
 class SystemdManager:
     def __init__(self):
         self.service_pattern = f"timelapse-*.{service_ext}"
         self.service_dir = "/etc/systemd/system/"
-    
+
     def get_timelapse_services(self):
         try:
             services = glob.glob(f"{self.service_dir}{self.service_pattern}")
-            return [Path(service).stem for service in services if any([s in service for s in filter_services])]
+            return [
+                Path(service).stem
+                for service in services
+                if any([s in service for s in filter_services])
+            ]
         except Exception as e:
             print(f"Error finding services: {e}")
             return []
-    
+
     def get_service_status(self, service_name):
         try:
             result = subprocess.run(
-                ["systemctl", "is-active", service_name],
-                capture_output=True,
-                text=True
+                ["systemctl", "is-active", service_name], capture_output=True, text=True
             )
             return result.stdout.strip()
         except Exception:
             return "unknown"
-    
+
     def start_service(self, service_name):
         try:
             result = subprocess.run(
                 ["sudo", "systemctl", "start", service_name],
                 capture_output=True,
-                text=True
+                text=True,
             )
             if result.returncode == 0:
                 return True, f"Started {service_name}"
@@ -49,13 +52,13 @@ class SystemdManager:
                 return False, f"Failed to start {service_name}: {result.stderr}"
         except Exception as e:
             return False, f"Error starting service: {e}"
-    
+
     def stop_service(self, service_name):
         try:
             result = subprocess.run(
                 ["sudo", "systemctl", "stop", service_name],
                 capture_output=True,
-                text=True
+                text=True,
             )
             if result.returncode == 0:
                 return True, f"Stopped {service_name}"
@@ -63,66 +66,73 @@ class SystemdManager:
                 return False, f"Failed to stop {service_name}: {result.stderr}"
         except Exception as e:
             return False, f"Error stopping service: {e}"
-    
+
     def parse_service_file(self, service_name):
         service_file = f"{self.service_dir}{service_name}.{service_ext}"
-        
+
         try:
-            with open(service_file, 'r') as f:
+            with open(service_file, "r") as f:
                 content = f.read()
-            
+
             info = {"service": service_name}
-            
-            exec_start_match = re.search(r'ExecStart=(.+)', content)
+
+            exec_start_match = re.search(r"ExecStart=(.+)", content)
             if not exec_start_match:
                 return {"error": f"Could not find ExecStart in {service_name}"}
-            
+
             exec_start = exec_start_match.group(1)
             parts = exec_start.split()
             if len(parts) < 4:
                 return {"error": f"Invalid ExecStart format in {service_name}"}
-            
-            info.update({
-                "python_path": parts[0],
-                "script_path": parts[1],
-                "camera_config": parts[2] if len(parts) > 2 else "",
-                "output_name": parts[3] if len(parts) > 3 else "",
-                "additional_args": parts[4:] if len(parts) > 4 else []
-            })
-            
+
+            info.update(
+                {
+                    "python_path": parts[0],
+                    "script_path": parts[1],
+                    "camera_config": parts[2] if len(parts) > 2 else "",
+                    "output_name": parts[3] if len(parts) > 3 else "",
+                    "additional_args": parts[4:] if len(parts) > 4 else [],
+                }
+            )
+
             # Extract other info
             for pattern, key in [
-                (r'Description=(.+)', 'description'),
-                (r'User=(.+)', 'user'),
-                (r'WorkingDirectory=(.+)', 'working_directory')
+                (r"Description=(.+)", "description"),
+                (r"User=(.+)", "user"),
+                (r"WorkingDirectory=(.+)", "working_directory"),
             ]:
                 match = re.search(pattern, content)
                 if match:
                     info[key] = match.group(1)
-            
+
             return info
         except FileNotFoundError:
             return {"error": f"Service file not found: {service_file}"}
         except Exception as e:
             return {"error": f"Error parsing service file: {e}"}
-    
+
     def get_all_services_info(self):
         services = self.get_timelapse_services()
         services_info = []
-        
+
         for service in services:
-            service_id = service.replace("timelapse-", "").replace(f".{service_ext}", "")
+            service_id = service.replace("timelapse-", "").replace(
+                f".{service_ext}", ""
+            )
             status = self.get_service_status(service)
             info = self.parse_service_file(service)
-            
-            services_info.append({
-                "service_id": service_id,
-                "service_name": service,
-                "status": status,
-                "info": info
-            })
-        
+
+            services_info.append(
+                {
+                    "service_id": service_id,
+                    "service_name": service,
+                    "status": status,
+                    "info": info,
+                }
+            )
+
         return services_info
+
 
 manager = SystemdManager()
 
@@ -284,42 +294,46 @@ HTML_TEMPLATE = """
 </html>
 """
 
-@app.route('/')
+
+@app.route("/")
 def index():
     services = manager.get_all_services_info()
-    message = request.args.get('message')
-    message_type = request.args.get('type', 'success')
-    
-    return render_template_string(HTML_TEMPLATE, 
-                                services=services, 
-                                message=message, 
-                                message_type=message_type)
+    message = request.args.get("message")
+    message_type = request.args.get("type", "success")
 
-@app.route('/start/<service_id>')
+    return render_template_string(
+        HTML_TEMPLATE, services=services, message=message, message_type=message_type
+    )
+
+
+@app.route("/start/<service_id>")
 def start_service(service_id):
     service_name = f"timelapse-{service_id}.{service_ext}"
     success, message = manager.start_service(service_name)
-    message_type = 'success' if success else 'error'
-    return redirect(url_for('index', message=message, type=message_type))
+    message_type = "success" if success else "error"
+    return redirect(url_for("index", message=message, type=message_type))
 
-@app.route('/stop/<service_id>')
+
+@app.route("/stop/<service_id>")
 def stop_service(service_id):
     service_name = f"timelapse-{service_id}.{service_ext}"
     success, message = manager.stop_service(service_name)
-    message_type = 'success' if success else 'error'
-    return redirect(url_for('index', message=message, type=message_type))
+    message_type = "success" if success else "error"
+    return redirect(url_for("index", message=message, type=message_type))
 
-@app.route('/api/status')
+
+@app.route("/api/status")
 def api_status():
     """JSON API endpoint for status"""
     services = manager.get_all_services_info()
     return jsonify(services)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     print("Starting Timelapse SystemD Manager Web Interface")
     print("Access from any device on your network at:")
     print("http://YOUR_RASPBERRY_PI_IP:5000")
     print("\nTo find your IP address, run: hostname -I")
-    
+
     # Run on all interfaces so it's accessible from other devices
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=False)

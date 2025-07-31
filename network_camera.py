@@ -5,10 +5,8 @@ from image_writer import ImageWriter
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
 )
 
 logger = logging.getLogger(__name__)
@@ -16,12 +14,10 @@ logger = logging.getLogger(__name__)
 
 class NetworkCamera:
 
-    def __init__(self, *, 
-                 url:str, 
-                 description:str, 
-                 flush_frames:int, 
-                 image_interval_s:float):
-        
+    def __init__(
+        self, *, url: str, description: str, flush_frames: int, image_interval_s: float
+    ):
+
         self.url = url
         self.cap = None
 
@@ -31,13 +27,13 @@ class NetworkCamera:
 
         self.nbr_of_failed_captures = 0
         self.delay_start_s = 0
-        
+
         self.image_writer = ImageWriter(description=description)
 
     # Override to use mockup HW
     def _create_capture(self):
         return cv2.VideoCapture(self.url)
-    
+
     # Use for capturing several images
     # continuous_capture means that the video capture stream is being kept open,
     #   if False the video_stream is reopened every time an image is captures
@@ -46,7 +42,7 @@ class NetworkCamera:
             self._continuous_capture()
         else:
             self._intermittent_capture()
-    
+
     # Capture single snapshot
     def snapshot_capture(self):
         while True:
@@ -59,11 +55,11 @@ class NetworkCamera:
                     if success:
                         self._release_capture()
                         return
-            
+
             except Exception as exc:
                 logger.exception("Exception during intermittent capture")
                 time.sleep(600)
-            
+
             if self.nbr_of_failed_captures > 5:
                 logger.exception("Cannot capture image. Aborting")
                 return
@@ -75,7 +71,7 @@ class NetworkCamera:
                 self._restart()
             except Exception as exc:
                 logger.exeption("Exception when opening stream")
-        
+
         # Capture timelapse images
         while True:
             try:
@@ -151,12 +147,14 @@ class NetworkCamera:
         if self.nbr_of_failed_captures == 3:
             self.delay_start_s = 30
         elif self.nbr_of_failed_captures > 3:
-            self.delay_start_s = min(2*self.delay_start_s, 600)
+            self.delay_start_s = min(2 * self.delay_start_s, 600)
         # If previous restarts failed, wait a bit longer
         if self.delay_start_s:
-            logger.info(f"{self.nbr_of_failed_captures} consecutive failed captures. Waiting {self.delay_start_s} seconds")
+            logger.info(
+                f"{self.nbr_of_failed_captures} consecutive failed captures. Waiting {self.delay_start_s} seconds"
+            )
             time.sleep(self.delay_start_s)
-        
+
         # Restart capture
         self._release_capture()
         time.sleep(10)

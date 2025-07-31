@@ -10,53 +10,61 @@ import re
 
 from video_template import VideoTemplate
 
+
 @dataclass
 class VideoToml:
-    # If 'copy' field has a value, it means current template will inherit from parent template 
+    # If 'copy' field has a value, it means current template will inherit from parent template
     # and then overwrite wherever current template has a value.
     # Included here for clarity, but intentionally commented out
     # copy : str
     # Directory containing images
-    dir : Path = None
+    dir: Path = None
     # Frames per second
-    fps : Number = None
+    fps: Number = None
     # Use every n:th frame
-    skip : int = None
+    skip: int = None
     # Start at date and time given by string (formatted YY-mm-DD-HH-MM-SS)
-    startat : str = None
+    startat: str = None
     # Set resolution
-    resolution : tuple[Number, Number] = None
+    resolution: tuple[Number, Number] = None
     # Resolution of final movie
-    output_resolution : tuple[Number, Number] = None
+    output_resolution: tuple[Number, Number] = None
     # Cropping if applicable
-    crop : tuple[Number, Number, Number, Number]= None
+    crop: tuple[Number, Number, Number, Number] = None
     # Rotation of image
-    rotation : Number = None
+    rotation: Number = None
     # Grayscale (0 or 1)
-    gray : int = None
+    gray: int = None
     # Histogram normalization (0 or 1)
-    normalize : int = None 
+    normalize: int = None
     # Subtract background (0 or 1)
-    subtract : int = None
+    subtract: int = None
     # # Thresholding values for filtering - 0, 1, 2, 3 or 6 element vector
     # threshold : Number | np.array = None
 
     # Parse attributes to generate template with settings for video generation
-    def get_video_template(self, top_dir:Path=None):
+    def get_video_template(self, top_dir: Path = None):
 
         top_dir = top_dir or Path(os.path.expanduser("~")) / "data"
 
-        pattern = str(top_dir / self.dir/ '*.png')
+        pattern = str(top_dir / self.dir / "*.png")
         images = sorted(glob(pattern))
-        
+
         if self.startat:
-            while len(self.startat.split('-')) < 5:
-                self.startat += '-00'
-            images = [i for i in images if re.search(r'(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})', os.path.basename(i)).group(1) >= self.startat]
+            while len(self.startat.split("-")) < 5:
+                self.startat += "-00"
+            images = [
+                i
+                for i in images
+                if re.search(
+                    r"(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})", os.path.basename(i)
+                ).group(1)
+                >= self.startat
+            ]
 
         if self.skip:
-            images = images[::self.skip]
-        
+            images = images[:: self.skip]
+
         fps = self.fps
         crop = self.crop
         rotation = self.rotation
@@ -74,7 +82,7 @@ class VideoToml:
         if not output_resolution:
             if crop:
                 left, top, right, bottom = crop
-                output_resolution = (right-left, bottom-top)
+                output_resolution = (right - left, bottom - top)
             else:
                 output_resolution = input_resolution
 
@@ -95,26 +103,29 @@ class VideoToml:
         #         upper_threshold = np.array(threshold[3:])
         #     else:
         #         raise Exception(f"Illegal dimension of threshold array: {len(threshold)}. Allowed dimensions are 0, 1, 2, 3 or 6")
-            
-        return VideoTemplate(images=images, 
-                    fps=fps, 
-                    input_resolution=input_resolution, 
-                    input_resolution_fixed=input_resolution_fixed,
-                    crop=crop,
-                    rotation=rotation,
-                    grayscale=grayscale,
-                    normalize=normalize,
-                    subtract_background=subtract_background,
+
+        return VideoTemplate(
+            images=images,
+            fps=fps,
+            input_resolution=input_resolution,
+            input_resolution_fixed=input_resolution_fixed,
+            crop=crop,
+            rotation=rotation,
+            grayscale=grayscale,
+            normalize=normalize,
+            subtract_background=subtract_background,
             #        lower_threshold=lower_threshold,
             #        upper_threshold=upper_threshold,
-                    output_resolution=output_resolution
-                    )
+            output_resolution=output_resolution,
+        )
 
 
 # Read settings file - separate function to allow for recursive calls if 'copy' field is used to indicate inheritance
-def _read_toml(video_id:str, recursion_list):
+def _read_toml(video_id: str, recursion_list):
 
-    video_settings_path = Path(os.path.expanduser("~")) / "settings" / "video-settings.toml"
+    video_settings_path = (
+        Path(os.path.expanduser("~")) / "settings" / "video-settings.toml"
+    )
     assert os.path.isfile(video_settings_path)
 
     if recursion_list is None:
@@ -123,26 +134,25 @@ def _read_toml(video_id:str, recursion_list):
         raise RecursionError(f"Circular reference for video template {video_id}")
     recursion_list.append(video_id)
 
-    with open(video_settings_path, 'r') as f:
+    with open(video_settings_path, "r") as f:
         settings = toml.load(f)[video_id]
 
-    parent = settings.get('copy')
+    parent = settings.get("copy")
     if parent is None:
         video_toml = VideoToml()
     else:
         video_toml = _read_toml(video_id=parent, recursion_list=recursion_list)
-    
+
     for field in fields(VideoToml):
         value = settings.get(field.name)
         if value is not None:
             setattr(video_toml, field.name, value)
     return video_toml
 
+
 # Use to read file with video settings
-def parse_video_settings(video_id:str, top_dir:Path=None, recursion_list=None):
+def parse_video_settings(video_id: str, top_dir: Path = None, recursion_list=None):
 
     video_toml = _read_toml(video_id=video_id, recursion_list=None)
-    
-    return video_toml.get_video_template(top_dir=top_dir)
 
-    
+    return video_toml.get_video_template(top_dir=top_dir)
