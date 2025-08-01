@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 import time
-from .network_camera import NetworkCamera
+from .timelapse_capture import TimelapseCapture
 
 
-class MockVideoCapture:
+class MockTimelapseCapture:
 
     def __init__(self):
         self.frame_count = 0
@@ -59,10 +59,10 @@ class MockVideoCapture:
         self.is_opened = False
 
 
-class MockNetworkCamera(NetworkCamera):
+class MockNetworkCamera(TimelapseCapture):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def _create_capture(self):
-        return MockVideoCapture()
+        return MockTimelapseCapture()

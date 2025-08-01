@@ -12,7 +12,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class NetworkCamera:
+class TimelapseCapture:
 
     def __init__(
         self, *, url: str, description: str, flush_frames: int, image_interval_s: float

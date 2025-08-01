@@ -3,8 +3,8 @@ import toml
 
 from .camera_manager import camera_settings_path  # , get_credentials
 from .interim_password_manager import get_credentials
-from .mock_network_camera import MockNetworkCamera
-from .network_camera import NetworkCamera
+from .mock_timelapse_camera import MockNetworkCamera
+from .timelapse_capture import TimelapseCapture
 
 
 def create_network_camera(
@@ -59,11 +59,11 @@ def create_network_camera(
     if test:
         cam = MockNetworkCamera(**input_args)
     else:
-        cam = NetworkCamera(**input_args)
+        cam = TimelapseCapture(**input_args)
     return cam
 
 
-def record_timelapse(cam: NetworkCamera, persistent: bool, snapshot: bool):
+def record_timelapse(cam: TimelapseCapture, persistent: bool, snapshot: bool):
     if snapshot:
         cam.snapshot_capture()
     else:
