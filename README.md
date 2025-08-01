@@ -16,5 +16,5 @@
 
 ## Sample files
 - `cameras.toml` Sample file with camera properties
-- `video-settings.toml` Sample file with video properties
+- `video-settings.yaml` Sample file with video properties
 - `systemd` folder: Sample service files for running jobs in Linux

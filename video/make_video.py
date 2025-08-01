@@ -1,4 +1,4 @@
-from .video_toml import parse_video_settings
+from .video_settings_parser import parse_video_settings
 
 
 def make_video(video_tag: str, video_path: str, preview: bool):

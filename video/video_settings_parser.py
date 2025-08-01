@@ -1,7 +1,7 @@
 from dataclasses import dataclass, fields
 from pathlib import Path
 import os
-import toml
+import yaml
 from glob import glob
 import numpy as np
 from numbers import Number
@@ -12,7 +12,7 @@ from .video_template import VideoTemplate
 
 
 @dataclass
-class VideoToml:
+class VideoSettingsParser:
     # If 'copy' field has a value, it means current template will inherit from parent template
     # and then overwrite wherever current template has a value.
     # Included here for clarity, but intentionally commented out
@@ -121,10 +121,10 @@ class VideoToml:
 
 
 # Read settings file - separate function to allow for recursive calls if 'copy' field is used to indicate inheritance
-def _read_toml(video_id: str, recursion_list):
+def _read_video_settings_file(video_id: str, recursion_list):
 
     video_settings_path = (
-        Path(os.path.expanduser("~")) / "settings" / "video-settings.toml"
+        Path(os.path.expanduser("~")) / "settings" / "video-settings.yaml"
     )
     assert os.path.isfile(video_settings_path)
 
@@ -135,24 +135,28 @@ def _read_toml(video_id: str, recursion_list):
     recursion_list.append(video_id)
 
     with open(video_settings_path, "r") as f:
-        settings = toml.load(f)[video_id]
+        settings = yaml.safe_load(f)[video_id]
 
     parent = settings.get("copy")
     if parent is None:
-        video_toml = VideoToml()
+        video_settings_parser = VideoSettingsParser()
     else:
-        video_toml = _read_toml(video_id=parent, recursion_list=recursion_list)
+        video_settings_parser = _read_video_settings_file(
+            video_id=parent, recursion_list=recursion_list
+        )
 
-    for field in fields(VideoToml):
+    for field in fields(VideoSettingsParser):
         value = settings.get(field.name)
         if value is not None:
-            setattr(video_toml, field.name, value)
-    return video_toml
+            setattr(video_settings_parser, field.name, value)
+    return video_settings_parser
 
 
 # Use to read file with video settings
 def parse_video_settings(video_id: str, top_dir: Path = None, recursion_list=None):
 
-    video_toml = _read_toml(video_id=video_id, recursion_list=None)
+    video_settings_parser = _read_video_settings_file(
+        video_id=video_id, recursion_list=None
+    )
 
-    return video_toml.get_video_template(top_dir=top_dir)
+    return video_settings_parser.get_video_template(top_dir=top_dir)

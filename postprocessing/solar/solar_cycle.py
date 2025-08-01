@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 import sys
 
-from video.video_toml import parse_video_settings
+from video.video_settings_parser import parse_video_settings
 
 
 def extract_brightness(frame):

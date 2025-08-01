@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 from ultralytics import YOLO
 
-from video.video_toml import parse_video_settings
+from video.video_settings_parser import parse_video_settings
 
 model = YOLO("yolov8n.pt")
 YOLO_HUMAN_CLASS = 0
