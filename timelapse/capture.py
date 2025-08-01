@@ -2,6 +2,7 @@ from .mock_timelapse_camera import MockNetworkCamera
 from .timelapse_capture import TimelapseCapture
 from shared.parse_camera_settings import parse_camera_settings
 
+
 def create_network_camera(
     cam_stream: str,
     description: str,

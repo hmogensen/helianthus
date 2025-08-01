@@ -4,8 +4,6 @@ __pycache__/
 *.mp4
 *.gif
 *.jpg
-cameras.toml
-video-settings.yaml
-credentials.toml
-credentials.txt
+*.toml
+*.yaml
 yolov8n.pt

@@ -3,6 +3,7 @@ import toml
 from .camera_manager import camera_settings_path
 from .interim_password_manager import get_credentials
 
+
 def parse_camera_settings(cam_stream: str):
     if not os.path.isfile(camera_settings_path):
         raise FileNotFoundError(f"File {camera_settings_path} not found")
@@ -38,6 +39,5 @@ def parse_camera_settings(cam_stream: str):
         rtsp_url = f"rtsp://{username}:{password}@{cam_ip}:{port}/{stream_path}"
     else:
         rtsp_url = f"rtsp://{username}:{password}@{cam_ip}/{stream_path}"
-    
-    return rtsp_url
 
+    return rtsp_url
