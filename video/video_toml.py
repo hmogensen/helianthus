@@ -8,7 +8,7 @@ from numbers import Number
 import cv2
 import re
 
-from video_template import VideoTemplate
+from .video_template import VideoTemplate
 
 
 @dataclass

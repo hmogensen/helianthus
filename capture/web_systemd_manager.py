@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 from flask import Flask, render_template_string, request, jsonify, redirect, url_for
 import subprocess
-import sys
 import glob
 import re
 from pathlib import Path
-import json
 
 app = Flask(__name__)
 

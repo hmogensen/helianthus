@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import time
-from network_camera import NetworkCamera
+from .network_camera import NetworkCamera
 
 
 class MockVideoCapture:

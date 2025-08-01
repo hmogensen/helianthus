@@ -5,7 +5,7 @@ from functools import cached_property
 from datetime import datetime
 import re
 
-from gif_writer import GIF_Writer
+from .gif_writer import GIF_Writer
 
 
 def filename_to_date(filename):

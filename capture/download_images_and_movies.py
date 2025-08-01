@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from interim_password_manager import get_ssh_login
 from download_remote_files import download_remote_files, clear_remote_images
-from make_video import make_video
+from video.make_video import make_video
 
 
 def main(tags, make_movie, delete_remote):

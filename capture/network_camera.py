@@ -1,7 +1,7 @@
 import cv2
 import time
 import logging
-from image_writer import ImageWriter
+from .image_writer import ImageWriter
 
 logging.basicConfig(
     level=logging.INFO,

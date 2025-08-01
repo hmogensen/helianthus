@@ -3,7 +3,10 @@ import numpy as np
 import cv2
 import h5py
 from datetime import datetime
-from video_toml import parse_video_settings
+import os
+import sys
+
+from video.video_toml import parse_video_settings
 
 
 def extract_brightness(frame):
