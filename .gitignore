@@ -8,3 +8,4 @@ cameras.toml
 video-settings.toml
 credentials.toml
 credentials.txt
+yolov8n.pt
