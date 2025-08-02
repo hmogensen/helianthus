@@ -1,12 +1,21 @@
-import cv2
-import time
-
+import argparse
+import logging
 from queue import Queue, Empty
 from threading import Event, Thread
+import time
+
+import cv2
 
 from shared.parse_camera_settings import parse_camera_settings
 from .image_filter import ImageFilter
 from .classifier import Classifier
+
+verbosity_levels = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "error": logging.ERROR,
+}
 
 cam_stream = "tapo.lowres"
 filter = ImageFilter(vflip=True)
@@ -37,12 +46,13 @@ def camera_stream(
                 dispatch_queue.get_nowait()
             except Empty:
                 break
-        print("Dispatching frame")
+
+        logging.debug("Dispatching frame")
         dispatch_queue.put_nowait(frame)
 
         if terminate.is_set():
             dispatch_queue.put(None)
-            print("Camera stream terminated")
+            logging.info("Camera stream terminated")
             break
 
     cap.release()
@@ -56,27 +66,49 @@ def processing_stream(incoming_frames: Queue, classifier: Classifier):
             break
         else:
             cls = classifier.classify(frame)
-            print(f"Classification: {cls}")
-    print("Processing thread terminated")
+            logging.debug(f"Classification: {cls}")
+    logging.info("Processing thread terminated")
 
 
-frame_queue = Queue(maxsize=1)
-terminate_event = Event()
+def main():
+    frame_queue = Queue(maxsize=1)
+    terminate_event = Event()
 
-cam_thread = Thread(
-    target=camera_stream, args=(frame_queue, terminate_event, cam_stream, filter)
-)
-classifier_thread = Thread(target=processing_stream, args=(frame_queue, classifier))
+    cam_thread = Thread(
+        target=camera_stream, args=(frame_queue, terminate_event, cam_stream, filter)
+    )
+    classifier_thread = Thread(target=processing_stream, args=(frame_queue, classifier))
 
-cam_thread.start()
-classifier_thread.start()
+    cam_thread.start()
+    classifier_thread.start()
 
-try:
-    while not terminate_event.is_set():
-        time.sleep(0.1)
-except KeyboardInterrupt:
-    print("Ctrl+C pressed, terminating...")
-    terminate_event.set()
+    try:
+        while not terminate_event.is_set():
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        logging.info("Ctrl+C pressed, terminating...")
+        terminate_event.set()
 
-cam_thread.join()
-classifier_thread.join()
+    cam_thread.join()
+    classifier_thread.join()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Real-time classification of objects from network camera stream"
+    )
+    parser.add_argument(
+        "--verbosity",
+        "-v",
+        choices=verbosity_levels.keys(),
+        default="info",
+        help=f"Set vebosity level: {verbosity_levels}",
+    )
+    args = parser.parse_args()
+
+    verbosity = args.verbosity.lower()
+    level = verbosity_levels.get(verbosity, logging.INFO)
+    logging.basicConfig(
+        level=level, format="%(asctime)s - %(threadName)s - %(message)s"
+    )
+    main()
