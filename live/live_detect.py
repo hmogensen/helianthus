@@ -1,14 +1,15 @@
 import argparse
 import logging
-from queue import Queue, Empty
+from queue import Queue, Empty, Full
 from threading import Event, Thread
 import time
 
 import cv2
+import pyttsx3
 
 from shared.parse_camera_settings import parse_camera_settings
-from .image_filter import ImageFilter
 from .classifier import Classifier
+from .image_filter import ImageFilter
 
 verbosity_levels = {
     "debug": logging.DEBUG,
@@ -41,14 +42,18 @@ def camera_stream(
 
         frame = filter.apply(frame)
 
-        while not dispatch_queue.empty():
+        try:
+            dispatch_queue.put_nowait(frame)
+            logging.debug("Dispatching frame")
+        except Full:
+            logging.debug("Dispatch queue is full")
             try:
                 dispatch_queue.get_nowait()
+                dispatch_queue.put_nowait(frame)
+                logging.debug("Replacing frame")
             except Empty:
+                logging.debug("Race condition - queue empty")
                 break
-
-        logging.debug("Dispatching frame")
-        dispatch_queue.put_nowait(frame)
 
         if terminate.is_set():
             dispatch_queue.put(None)
@@ -67,6 +72,10 @@ def processing_stream(incoming_frames: Queue, classifier: Classifier):
         else:
             cls = classifier.classify(frame)
             logging.debug(f"Classification: {cls}")
+            for obj in cls:
+                msg = f"{obj} detected"
+                logging.info(msg)
+                pyttsx3.speak(msg)
     logging.info("Processing thread terminated")
 
 
@@ -102,13 +111,13 @@ if __name__ == "__main__":
         "-v",
         choices=verbosity_levels.keys(),
         default="info",
-        help=f"Set vebosity level: {verbosity_levels}",
+        help=f"Set verbosity level: {verbosity_levels}",
     )
     args = parser.parse_args()
 
     verbosity = args.verbosity.lower()
     level = verbosity_levels.get(verbosity, logging.INFO)
     logging.basicConfig(
-        level=level, format="%(asctime)s - %(threadName)s - %(message)s"
+        level=level, format="%(asctime)s - %(levelname)s - %(threadName)s - %(message)s"
     )
     main()
