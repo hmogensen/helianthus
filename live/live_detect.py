@@ -6,9 +6,11 @@ from threading import Event, Thread
 
 from shared.parse_camera_settings import parse_camera_settings
 from .image_filter import ImageFilter
+from .classifier import Classifier
 
 cam_stream = "tapo.lowres"
 filter = ImageFilter(vflip=True)
+classifier = Classifier()
 
 
 def camera_stream(
@@ -47,14 +49,14 @@ def camera_stream(
     cv2.destroyAllWindows()
 
 
-def processing_stream(incoming_frames: Queue):
+def processing_stream(incoming_frames: Queue, classifier: Classifier):
     while True:
         frame = incoming_frames.get()
         if frame is None:
             break
         else:
-            print(frame.shape)
-            # Do processing
+            cls = classifier.classify(frame)
+            print(f"Classification: {cls}")
     print("Processing thread terminated")
 
 
@@ -64,7 +66,7 @@ terminate_event = Event()
 cam_thread = Thread(
     target=camera_stream, args=(frame_queue, terminate_event, cam_stream, filter)
 )
-classifier_thread = Thread(target=processing_stream, args=(frame_queue,))
+classifier_thread = Thread(target=processing_stream, args=(frame_queue, classifier))
 
 cam_thread.start()
 classifier_thread.start()
