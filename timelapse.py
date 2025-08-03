@@ -1,5 +1,5 @@
 import argparse
-from timelapse.capture import create_network_camera, record_timelapse
+from timelapse.record_timelapse import create_network_camera, record_timelapse
 
 default_flush_frames = 0
 default_image_interval_s = 600

@@ -1,6 +1,6 @@
-from .mock_timelapse_camera import MockNetworkCamera
-from .timelapse_capture import TimelapseCapture
 from shared.parse_camera_settings import parse_camera_settings
+from test.test_timelapse_capture import TestTimelapseCapture
+from .timelapse_capture import TimelapseCapture
 
 
 def create_network_camera(
@@ -19,7 +19,7 @@ def create_network_camera(
         "image_interval_s": image_interval_s,
     }
     if test:
-        cam = MockNetworkCamera(**input_args)
+        cam = TestTimelapseCapture(test_mode="humanoids", **input_args)
     else:
         cam = TimelapseCapture(**input_args)
     return cam

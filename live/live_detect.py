@@ -8,6 +8,7 @@ import cv2
 import pyttsx3
 
 from shared.parse_camera_settings import parse_camera_settings
+from test.test_video_capture import Test_cv2_VideoCapture
 from .classifier import Classifier
 from .image_filter import ImageFilter
 
@@ -24,12 +25,19 @@ classifier = Classifier()
 
 
 def camera_stream(
-    dispatch_queue: Queue, terminate: Event, cam_stream: str, filter: ImageFilter
+    dispatch_queue: Queue,
+    terminate: Event,
+    cam_stream: str,
+    filter: ImageFilter,
+    test: bool = False,
 ):
 
     rtsp_url = parse_camera_settings(cam_stream)
 
-    cap = cv2.VideoCapture(rtsp_url)
+    if test:
+        cap = Test_cv2_VideoCapture(rtsp_url, test_mode="humanoids")
+    else:
+        cap = cv2.VideoCapture(rtsp_url)
 
     if not cap.isOpened():
         raise Exception("Could not open RTSP stream")
@@ -79,12 +87,13 @@ def processing_stream(incoming_frames: Queue, classifier: Classifier):
     logging.info("Processing thread terminated")
 
 
-def main():
+def main(test: bool = False):
     frame_queue = Queue(maxsize=1)
     terminate_event = Event()
 
     cam_thread = Thread(
-        target=camera_stream, args=(frame_queue, terminate_event, cam_stream, filter)
+        target=camera_stream,
+        args=(frame_queue, terminate_event, cam_stream, filter, test),
     )
     classifier_thread = Thread(target=processing_stream, args=(frame_queue, classifier))
 
@@ -113,6 +122,15 @@ if __name__ == "__main__":
         default="info",
         help=f"Set verbosity level: {verbosity_levels}",
     )
+
+    parser.add_argument(
+        "--test",
+        "-t",
+        action="store_true",
+        default=False,
+        help="Use mockup camera to test functionality",
+    )
+
     args = parser.parse_args()
 
     verbosity = args.verbosity.lower()
@@ -120,4 +138,4 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=level, format="%(asctime)s - %(levelname)s - %(threadName)s - %(message)s"
     )
-    main()
+    main(test=args.test)

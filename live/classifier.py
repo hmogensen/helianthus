@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from ultralytics import YOLO
 
 yolo_objects = {
@@ -84,6 +86,20 @@ yolo_objects = {
 }
 
 
+@dataclass
+class DetectedObject:
+    tag: str
+    x1: int
+    x2: int
+    y1: int
+    y2: int
+    conf: float
+
+
+def _box2obj(box):
+    return DetectedObject(tag=yolo_objects[box.cls])
+
+
 class Classifier:
 
     def __init__(self, confidence_threshold: float = 0.5):
@@ -98,4 +114,10 @@ class Classifier:
         boxes = boxes[boxes.conf > self.confidence_threshold]
         if len(boxes) == 0:
             return []
+        print("\n\n\n")
+        print(results)
+        print("\n\n\n")
+        print(results[0].boxes)
+        print("\n\n\n")
+
         return [yolo_objects[i] for i in boxes.cls.unique().tolist()]
