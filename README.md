@@ -1,4 +1,7 @@
 # timelapse
+
+Capture, download and render timelapse videos from network cameras. Runs the capture loop on a remote Linux device and renders videos locally.
+
 ![Sprouting sunflowers](https://github.com/hmogensen/timelapse-gallery/raw/main/sprouting-sunflowers.gif)
 
 *Sprouting sunflowers*
@@ -24,3 +27,5 @@
 - `cameras.toml` Sample file with camera properties
 - `video-settings.yaml` Sample file with video properties
 - `systemd` folder: Sample service files for running jobs in Linux
+
+
