@@ -1,5 +1,11 @@
 # timelapse
 ![Sprouting sunflowers](https://github.com/hmogensen/timelapse-gallery/raw/main/sprouting-sunflowers.gif)
+
+*Sprouting sunflowers*
+
+![Garden daily](https://github.com/hmogensen/timelapse-gallery/blob/main/garden-daily-320.gif)
+
+*(Almost) daily pictures from the garden from April 2025 - April 2026*
 ## Gateway scripts
 ### Capture images and manage network cameras (on remote device)
 - `timelapse.py` Create timelapse images using network cameras
